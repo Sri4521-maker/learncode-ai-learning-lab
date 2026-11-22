@@ -1,0 +1,17 @@
+{
+  "name": "learncode-ai-learning-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Adult-friendly daily AI literacy and web development learning lab with guided lessons and practice.",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.mjs",
+    "dev": "node --disable-warning=ExperimentalWarning server.mjs",
+    "cloudflare:dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public",
+    "db:local": "wrangler d1 execute student-survey-db --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute student-survey-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -17,22 +17,22 @@ Lesson and practice progress is stored in the current browser. Journal submissio
 
 Use Node.js 22.5 or newer. From this folder, run:
 
-~~~sh
+```sh
 npm install
 npm start
-~~~
+```
 
-Open http://127.0.0.1:8788. The local preview can be used while Google sign-in is being configured. For Google sign-in, copy .dev.vars.example to .dev.vars, set a Google Web OAuth client ID, and authorize the local URL. Do not commit .dev.vars or real secrets.
+Open <http://127.0.0.1:8788>. The local preview can be used while Google sign-in is being configured. For Google sign-in, copy `.dev.vars.example` to `.dev.vars`, set a Google Web OAuth client ID, and authorize the local URL. Do not commit `.dev.vars` or real secrets.
 
 ## Deploy to Cloudflare Pages
 
-1. Create a Cloudflare D1 database named student-survey-db and add its ID to wrangler.toml.
-2. Initialize the database with npm run db:remote.
-3. Add GOOGLE_CLIENT_ID and a strong ADMIN_SECRET as Cloudflare Pages variables/secrets. Configure Google OAuth and authorize the deployed domain.
-4. Run npx wrangler login, then deploy with npm run deploy.
+1. Create a Cloudflare D1 database named `student-survey-db` and add its ID to `wrangler.toml`.
+2. Initialize the database with `npm run db:remote`.
+3. Add `GOOGLE_CLIENT_ID` and a strong `ADMIN_SECRET` as Cloudflare Pages variables/secrets. Configure Google OAuth and authorize the deployed domain.
+4. Run `npx wrangler login`, then deploy with `npm run deploy`.
 5. Add a custom domain in Cloudflare Pages if you want a branded address.
 
-The public deployment needs the real Google OAuth client ID and D1 binding before sign-in and journal submissions work. Never publish secrets, .dev.vars, .env files, or the local data/ folder.
+The public deployment needs the real Google OAuth client ID and D1 binding before sign-in and journal submissions work. Never publish secrets, `.dev.vars`, `.env` files, or the local `data/` folder.
 
 ## AI assistant integration
 

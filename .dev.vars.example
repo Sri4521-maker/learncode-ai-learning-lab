@@ -1,0 +1,2 @@
+ADMIN_SECRET=replace-with-a-long-random-secret
+GOOGLE_CLIENT_ID=your-google-oauth-web-client-id.apps.googleusercontent.com
