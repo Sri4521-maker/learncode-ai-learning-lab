@@ -49,7 +49,7 @@ async function runFunction(file, handler, request, env, params = {}) {
 }
 
 async function handleApi(request, url, env) {
-  if (url.pathname === '/api/config' && request.method === 'GET') return response({ google_client_id: env.GOOGLE_CLIENT_ID || '', allow_local_preview: env.LOCAL_PREVIEW === 'true' });
+  if (url.pathname === '/api/config' && request.method === 'GET') return response({ google_client_id: env.GOOGLE_CLIENT_ID || '' });
   if (url.pathname === '/api/auth/google' && request.method === 'POST') {
     const module = await import(pathToFileURL(resolve(root, 'functions/api/auth/google.js')).href);
     return module.onRequestPost(adaptContext(request, env));
@@ -93,7 +93,7 @@ async function handleApi(request, url, env) {
 
 async function handle(request) {
   const url = new URL(request.url);
-  const localEnv = { LOCAL_PREVIEW: 'true', ...loadEnvFile(resolve(root, '.dev.vars')), ...process.env };
+  const localEnv = { ...loadEnvFile(resolve(root, '.dev.vars')), ...process.env };
   if (url.pathname.startsWith('/api/')) {
     try { return await handleApi(request, url, localEnv); }
     catch (error) {
