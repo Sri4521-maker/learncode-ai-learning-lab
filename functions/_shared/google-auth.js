@@ -17,6 +17,5 @@ export async function verifyGoogleIdentityToken(token, clientId) {
 export async function requireGoogleIdentity(request, env) {
   const header = request.headers.get('Authorization') || '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  if (env.LOCAL_PREVIEW === 'true' && token === 'local-preview') return { sub: 'local-preview-student', email: 'demo@example.invalid', name: 'Demo Learner', email_verified: true, preview: true };
   return verifyGoogleIdentityToken(token, env.GOOGLE_CLIENT_ID);
 }
