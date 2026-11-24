@@ -172,7 +172,7 @@
     { title: 'AI for Oceans', source: 'Code.org', minutes: '45 min', summary: 'In this hands-on lesson, learners train a classifier to separate ocean trash from sea life. By changing examples and labels, they see how training data influences a model and how a system can misclassify new cases.', takeaway: 'Models learn from examples, so missing or unbalanced examples can change their results.', url: 'https://studio.code.org/courses/oceans/units/1' },
     { title: 'Teachable Machine', source: 'Google', minutes: '10–15 min', summary: 'This browser activity lets learners create a simple image, sound, or pose classifier without writing code. Learners can add examples, train the model, and try new inputs to see what it recognizes and where it struggles.', takeaway: 'A model’s guesses depend on the examples it practiced with.', url: 'https://teachablemachine.withgoogle.com/' },
     { title: 'Responsible AI for Computational Action', source: 'MIT RAISE', minutes: 'Project based', summary: 'MIT’s project-based curriculum helps learners explore AI by building things that matter to them. It blends creative computing with questions about responsibility, society, and how a tool affects the people who use it.', takeaway: 'Start with a community need and check who benefits or might be harmed.', url: 'https://raise.mit.edu/research/research-projects/raica/' },
-    { title: 'Elements of AI: Introduction to AI', source: 'University of Helsinki & MinnaLearn', minutes: 'Self paced', summary: 'This free course explains what AI can and cannot do using practical exercises and plain-language concepts. It is designed for beginners and does not require advanced math or programming.', takeaway: 'A strong AI foundation includes limits and real-world effects, not only exciting demos.', url: 'https://www.elementsofai.com/' },
+    { title: 'Elements of AI: Introduction to AI', source: 'University of Helsinki & MinnaLearn', minutes: 'Self paced', summary: 'This free course explains what AI can and cannot do using practical exercises and plain-language concepts. It is designed for beginners and does not require advanced math or programming.', takeaway: 'A strong AI foundation includes limits and real-world effects, not only exciting examples.', url: 'https://www.elementsofai.com/' },
     { title: 'AI Competency Framework for Students', source: 'UNESCO', minutes: 'Educator reference', summary: 'UNESCO organizes student AI learning around a human-centered mindset, AI ethics, AI techniques, and system design. Its progression moves from understanding to applying and creating, with attention to critical judgment and responsible participation.', takeaway: 'Learning AI includes values and design choices as well as technical skills.', url: 'https://www.unesco.org/en/articles/ai-competency-framework-students' },
     { title: 'Unlocking Generative AI Safely and Responsibly', source: 'Microsoft Learn', minutes: 'Classroom toolkit', summary: 'This educator toolkit pairs generative AI activities with safety, responsibility, and critical thinking. It gives students a guided way to explore new tools while reflecting on their impact and limitations.', takeaway: 'Explore new tools with clear policies, critical thinking, and review.', url: 'https://learn.microsoft.com/en-us/training/educator-center/instructor-materials/classroom-toolkit-unlock-generative-ai-safely-responsibly' }
   ];
@@ -478,7 +478,6 @@
   async function startSignIn() {
     const config = await fetch('/api/config', { cache: 'no-store' }).then(response => response.json()).catch(() => ({}));
     googleClientId = config.google_client_id || '';
-    if (config.allow_local_preview) $('#demo-signin').hidden = false;
     const previousToken = sessionStorage.getItem('student-google-token');
     if (previousToken) {
       try {
@@ -489,7 +488,7 @@
     }
     document.body.classList.add('signed-out');
     setView('welcome');
-    if (!googleClientId) { $('#signin-message').textContent = config.allow_local_preview ? 'Google sign-in needs an OAuth client ID. The local learning arcade is available while it is being configured.' : 'Google sign-in needs the organization’s GOOGLE_CLIENT_ID setting.'; return; }
+    if (!googleClientId) { $('#signin-message').textContent = 'Google sign-in is not set up on this site yet. Please try again later.'; return; }
     const renderButton = () => {
       if (!window.google?.accounts?.id) { window.setTimeout(renderButton, 200); return; }
       window.google.accounts.id.initialize({ client_id: googleClientId, callback: response => acceptGoogleCredential(response.credential) });
