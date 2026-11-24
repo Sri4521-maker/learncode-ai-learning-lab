@@ -498,16 +498,7 @@
     };
     renderButton();
   }
-  $('#demo-signin').addEventListener('click', async () => {
-    const button = $('#demo-signin');
-    button.disabled = true;
-    $('#signin-message').textContent = 'Opening the demo learner account…';
-    try {
-      const result = await api('/api/auth/google', { method: 'POST', body: JSON.stringify({ preview: true }) });
-      sessionStorage.setItem('student-google-token', result.access_token);
-      enterAfterGoogle(result.profile);
-    } catch (error) { $('#signin-message').textContent = error.message; button.disabled = false; }
-  });
+;
   function showError(target, message) { target.innerHTML = `<div class="error-state">${escapeHtml(message)}</div>`; }
   function csvCell(value) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
   function exportCsv(rows) {
