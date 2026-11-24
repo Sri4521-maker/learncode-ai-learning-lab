@@ -488,7 +488,8 @@
     }
     document.body.classList.add('signed-out');
     setView('welcome');
-    if (!googleClientId) { $('#signin-message').textContent = 'Google sign-in is not set up on this site yet. Please try again later.'; return; }
+    if (!googleClientId) { $('#google-signin-fallback').hidden = false; $('#signin-message').textContent = 'Google sign-in needs this site’s Google OAuth client ID before accounts can connect.'; return; }
+    $('#google-signin-fallback').hidden = true;
     const renderButton = () => {
       if (!window.google?.accounts?.id) { window.setTimeout(renderButton, 200); return; }
       window.google.accounts.id.initialize({ client_id: googleClientId, callback: response => acceptGoogleCredential(response.credential) });
