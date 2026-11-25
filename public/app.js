@@ -3,8 +3,11 @@
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const state = { quiz: [], adminRows: [], chart: null, chartHistory: [], lastSubmission: null, gameLevel: 'foundations', calendarDate: new Date(), profileId: 'guest', gameData: {}, dailyOffset: 0 };
+  const state = { quiz: [], adminRows: [], chart: null, chartHistory: [], lastSubmission: null, gameLevel: 'foundations', calendarDate: new Date(), profileId: 'guest', gameData: {}, dailyOffset: 0, account: null, avatarColor: '#6c4ccf', isPremium: false, checkoutEnabled: false };
   let googleClientId = '';
+  let supabaseClient = null;
+  let authMode = 'signin';
+  let privatePreviewAvailable = false;
   const banks = {
     foundations: [
       { id: 'q1', question: 'What is a prompt?', options: ['A clear instruction or question given to an AI tool', 'A computer screen', 'A password', 'A type of battery'] },
@@ -62,7 +65,7 @@
     advanced: { name: 'Challenge mode', description: 'Tackle deeper decisions, tradeoffs, and more complex code ideas.' }
   };
   const intermediateBank = {
-    prompt: { question: 'Which prompt gives an AI enough context and a clear result to produce?', options: ['Help with science.', 'Create a 5-step study plan for a 7th grader preparing for a planets quiz. Keep each step under 10 minutes.', 'Write anything about planets.', 'Make a study plan.'], answer: 1, success: 'Good prompt design includes the learner, the goal, and useful limits.' },
+    prompt: { question: 'Which prompt gives an AI enough context and a clear result to produce?', options: ['Help with science.', 'Create a 5-step study plan for a learner preparing for a planets quiz. Keep each step under 10 minutes.', 'Write anything about planets.', 'Make a study plan.'], answer: 1, success: 'Good prompt design includes the learner, the goal, and useful limits.' },
     tag: { question: 'Put these semantic page pieces in a sensible order.', pieces: ['A labelled email field and submit button', 'A main region containing the page content', 'A heading that explains the form’s purpose'], answer: [1, 2, 0], success: 'A clear page gives its main content a heading before presenting the form.' },
     bug: { question: 'A teammate says their page works, but keyboard users cannot reach the submit button. What should you check first?', options: ['The button’s background color only.', 'Whether the button is a real button in the tab order and has a visible focus style.', 'Whether the page has more animations.', 'Whether the button text is longer.'], answer: 1, success: 'Keyboard users need controls in the tab order and a visible focus indicator.' },
     color: { question: 'A card uses a pale background. Which text color is the strongest readable choice?', options: ['A very pale yellow close to the background.', 'A dark color with strong contrast, verified with a contrast checker.', 'The same color as the background.', 'A color selected only because it looks bright.'], answer: 1, success: 'Contrast matters more than brightness. Check the actual color pair against accessibility guidance.' }
@@ -129,7 +132,7 @@
         'AI can sound confident and still be wrong. Treat generated text and code as a first draft. Check factual claims with reliable sources. Run code in a safe place, read what it does, and ask a qualified reviewer when the stakes are high.',
         'Do not paste passwords, addresses, private messages, school records, or other people’s personal details into an AI tool. Follow the rules for the tool you are using. Keep your own voice in the final project and explain what AI helped with.'
       ],
-      activity: ['Write a prompt that asks for a concise, sourced explanation of a local issue for a community briefing.', 'Underline the audience, task, and format in your prompt.', 'Check the answer in a trusted source and rewrite it in your own words.'],
+      activity: ['Write a prompt that asks for a concise, sourced explanation of a local issue for a school science project.', 'Underline the audience, task, and format in your prompt.', 'Check the answer in a trusted source and rewrite it in your own words.'],
       stretch: 'Ask an AI to critique your page for clarity, then decide which suggestion is useful and explain why.',
       question: 'An AI gives you a surprising fact for your page. What should you do?', options: ['Verify it with a reliable source before sharing it.', 'Share it because the answer sounds certain.', 'Add more exciting words and publish it.'], answer: 0,
       explain: 'Verification is part of using AI responsibly; confidence is not proof.'
@@ -147,13 +150,52 @@
       question: 'What is a strong final check before sharing your site?', options: ['Test the main task on a small screen and with a keyboard, then remove private details.', 'Publish first and check later.', 'Ask only whether the colors look cool.'], answer: 0,
       explain: 'A quick test and privacy check catch common problems before visitors find them.'
     }
+    ,{
+      title: 'Write your first Python program', theme: 'Python · output and variables',
+      goal: 'Use Python to store information and create a clear result.',
+      learn: [
+        'Python is a programming language used for websites, data, automation, and AI. A program is a set of instructions that a computer follows in order.',
+        'Use print() to show a result: print("Hello, learner!"). Text goes inside quotation marks. A variable gives a value a reusable name: topic = "AI". Then print(topic) displays that value.',
+        'Choose names that explain what they hold. Variables can store text, whole numbers, and other kinds of information. Use comments beginning with # to leave notes for people reading your code.'
+      ],
+      activity: ['Write print("My first Python program") and predict what appears.', 'Create a variable named favorite_topic and assign it a short text value.', 'Print a sentence that includes your variable. Change the value and run the program again.'],
+      stretch: 'Create two variables, combine them into a sentence, and print the result.',
+      question: 'What does print("Hello") do in Python?', options: ['Shows the text Hello as output.', 'Creates a website heading automatically.', 'Deletes the program.'], answer: 0,
+      explain: 'print() displays a value so you can see the program’s output.'
+    },
+    {
+      title: 'Make decisions with Python', theme: 'Python · conditions and comparisons',
+      goal: 'Use if and else to make a program respond to different information.',
+      learn: [
+        'Programs can choose between actions. An if statement checks whether a condition is true. Python uses indentation to show which instructions belong inside that choice.',
+        'For example: score = 8, then if score >= 5: print("Ready") else: print("Keep practicing"). The colon starts a block, and the indented lines are the actions for each outcome.',
+        'Comparisons include == for equal, > for greater than, and < for less than. A single equals sign assigns a value; two equals signs compare values.'
+      ],
+      activity: ['Set a variable called minutes to a number.', 'Write an if/else that prints “Short session” when minutes is below 10 and “Longer session” otherwise.', 'Try values on both sides of 10 and explain why the output changes.'],
+      stretch: 'Add an elif case for exactly 10 minutes.',
+      question: 'Which symbol checks whether two values are equal?', options: ['==', '=', '=>'], answer: 0,
+      explain: 'Python uses == to compare two values. A single = assigns a value to a variable.'
+    },
+    {
+      title: 'Repeat work with lists and loops', theme: 'Python · collections and iteration',
+      goal: 'Store several items in a list and use a loop to process them.',
+      learn: [
+        'A list holds several values in order: topics = ["AI", "Python", "design"]. Lists help programs work with collections without creating a new variable for every item.',
+        'A for loop repeats instructions for each item: for topic in topics: print(topic). The indented body runs once per list item. This is called iteration.',
+        'Lists use zero-based positions, so topics[0] is the first item. Use len(topics) to find how many items it contains. Check that a list has an item before asking for a position.'
+      ],
+      activity: ['Create a list with three safe learning topics.', 'Use a for loop to print a sentence for each topic.', 'Add a fourth topic and run the program again without changing the loop.'],
+      stretch: 'Count the items with len() and print the count after the loop.',
+      question: 'How many times does a for loop over a list of three items normally run?', options: ['Once for each item: three times.', 'Always exactly ten times.', 'It never runs unless the list is renamed.'], answer: 0,
+      explain: 'A for loop visits each item in the list, so three items produce three iterations.'
+    }
   ];
 
   const dailyAiLessons = [
     { title: 'AI is a tool, not a person', focus: 'Notice what AI can do and where human judgment matters.', learn: 'Artificial intelligence is a broad name for computer systems that do tasks people connect with abilities like recognizing patterns, using language, or making predictions. A system can produce a friendly answer without having feelings or life experience. Ask what a tool is designed to do, what information it uses, and when a person should check its work.', try: 'Choose one app you used today. Guess whether AI helps with its search, recommendations, photos, or voice features. Then look for a clue in the app settings or help page.', question: 'A chatbot writes “I feel excited.” What is the safest interpretation?', options: ['It is using a phrase; that does not prove it has feelings.', 'It must be happy because it said so.', 'It knows everything about being human.'], answer: 0, explain: 'Language can sound human even when a system is generating patterns in text.' },
     { title: 'How examples teach a model', focus: 'Explore training examples, labels, and practice data.', learn: 'Many AI systems learn patterns from examples. If a model sees pictures labeled “cat” and “dog,” it adjusts its internal settings so it can guess labels for new pictures. The examples are called training data. If examples are confusing or leave out important cases, the model may make unreliable guesses.', try: 'Invent a tiny classifier for fruit. Write three examples for each label, then add an unusual fruit and decide whether your labels still work.', question: 'What is training data?', options: ['Examples used to help a model learn patterns.', 'A list of passwords for an AI.', 'A guarantee that an answer is correct.'], answer: 0, explain: 'Training data provides examples; it does not guarantee perfect results.' },
     { title: 'Patterns are not the same as understanding', focus: 'Learn why a fluent answer can still miss the point.', learn: 'A language model learns relationships among pieces of text and predicts a likely next piece. That can make its writing useful and natural. It can also produce a polished answer that is incomplete, mixed up, or unsupported. A smooth explanation is a reason to inspect the evidence, not a reason to skip checking.', try: 'Ask a friend to write a two-sentence explanation of a familiar game. Compare it with an AI explanation and mark one detail that needs a source.', question: 'Why check a confident AI answer?', options: ['The system can generate plausible text without verifying every claim.', 'Confidence means the answer is always true.', 'Only long answers can contain mistakes.'], answer: 0, explain: 'Fluent language and factual accuracy are different things.' },
-    { title: 'Build a useful prompt', focus: 'Give a clear task, audience, and format.', learn: 'A prompt is an instruction or question sent to an AI tool. Useful prompts include a goal, relevant context, who the answer is for, and the shape of the response. You can improve the answer by adding one specific constraint at a time, then checking whether it followed them.', try: 'Rewrite “Tell me about space” as a concise overview of Mars for a colleague new to the topic, with sources to verify key claims.', question: 'Which prompt gives the clearest task?', options: ['Make it interesting.', 'Summarize Mars in three clear bullet points for a reader new to astronomy, and include sources I can verify.', 'Write something about planets.'], answer: 1, explain: 'The second prompt names the topic, audience, amount, purpose, and verification need.' },
+    { title: 'Build a useful prompt', focus: 'Give a clear task, audience, and format.', learn: 'A prompt is an instruction or question sent to an AI tool. Useful prompts include a goal, relevant context, who the answer is for, and the shape of the response. You can improve the answer by adding one specific constraint at a time, then checking whether it followed them.', try: 'Rewrite “Tell me about space” as a concise overview of Mars for a learner new to the topic, with sources to verify key claims.', question: 'Which prompt gives the clearest task?', options: ['Make it interesting.', 'Summarize Mars in three clear bullet points for a reader new to astronomy, and include sources I can verify.', 'Write something about planets.'], answer: 1, explain: 'The second prompt names the topic, audience, amount, purpose, and verification need.' },
     { title: 'Data gaps change the result', focus: 'See how missing examples affect predictions.', learn: 'A model can only learn from the examples available to it. If a dataset represents some people, places, or situations much more than others, performance can differ across cases. A small dataset is especially likely to miss unusual but important examples. Ask who and what is missing before trusting a result.', try: 'Imagine teaching a map app about “busy roads” using only weekday mornings. Name one time or place your examples forgot.', question: 'What can happen when training examples leave out important cases?', options: ['The model may work less well for cases it rarely saw.', 'The model automatically fills every gap fairly.', 'Nothing changes because data never affects AI.'], answer: 0, explain: 'Coverage gaps can create uneven or unreliable results.' },
     { title: 'Categories are human choices', focus: 'Question labels and categories used by AI.', learn: 'People decide what labels mean and what counts as a useful answer. A category that seems simple may hide many different cases. For example, “good photo” could mean bright, in focus, meaningful, or something else. When labels are unclear, two people may tag the same example differently, and a model learns that inconsistency.', try: 'Pick a category like “healthy snack.” List two different meanings people might have, then write a clearer label.', question: 'Why should a team define its labels?', options: ['Clear labels help people make more consistent examples.', 'Labels do not affect what a model learns.', 'The computer decides what every category means.'], answer: 0, explain: 'Labels carry human decisions into the data and should be made explicit.' },
     { title: 'Check a surprising claim', focus: 'Use a simple verification routine.', learn: 'Generative AI can make up sources or details that sound believable. For facts that matter, find an independent, trustworthy source and open it yourself. Check the author, date, evidence, and whether another reliable source agrees. For professional work, follow organizational policy and disclose AI assistance where required.', try: 'Take one fact from an AI answer and write a three-step check: find the original source, compare a second source, and note what is still uncertain.', question: 'What is a strong way to verify an AI claim?', options: ['Open reliable sources and compare the evidence.', 'Ask the same chatbot to repeat itself.', 'Trust it if the sentence sounds professional.'], answer: 0, explain: 'Independent evidence is stronger than repeating the same unverified output.' },
@@ -177,6 +219,29 @@
     { title: 'Unlocking Generative AI Safely and Responsibly', source: 'Microsoft Learn', minutes: 'Classroom toolkit', summary: 'This educator toolkit pairs generative AI activities with safety, responsibility, and critical thinking. It gives students a guided way to explore new tools while reflecting on their impact and limitations.', takeaway: 'Explore new tools with clear policies, critical thinking, and review.', url: 'https://learn.microsoft.com/en-us/training/educator-center/instructor-materials/classroom-toolkit-unlock-generative-ai-safely-responsibly' }
   ];
 
+  const partyQuestions = [
+    { topic: 'AI basics', question: 'An AI gives a confident answer with a surprising fact. What should you do?', options: ['Check it with a reliable source', 'Assume it is right', 'Share it before checking', 'Ask it to sound more confident'], answer: 0, why: 'AI can make mistakes even when an answer sounds certain.' },
+    { topic: 'Web building', question: 'Which tool usually changes a webpage’s colors and layout?', options: ['HTML', 'CSS', 'Wi-Fi', 'A file name'], answer: 1, why: 'CSS controls the look and layout of a webpage.' },
+    { topic: 'Stay safe', question: 'Which detail should you keep private in a public AI chat?', options: ['A favorite book genre', 'A made-up character name', 'Your home address', 'A pretend planet name'], answer: 2, why: 'Keep addresses and other personal details private.' },
+    { topic: 'Prompt power', question: 'Which prompt gives an AI the clearest task?', options: ['Do something cool', 'Explain photosynthesis in 3 short steps for a beginner', 'Write more', 'Tell me everything'], answer: 1, why: 'A clear goal, audience, and limit help guide the answer.' },
+    { topic: 'HTML', question: 'What does HTML mainly describe?', options: ['The structure of a webpage', 'The computer’s battery', 'A Wi-Fi password', 'A screen’s brightness'], answer: 0, why: 'HTML marks up content such as headings, paragraphs, and links.' },
+    { topic: 'Debugging', question: 'Your code has a bug. What is a smart first step?', options: ['Delete the whole project', 'Read the error and reproduce the problem', 'Change random lines', 'Blame the browser'], answer: 1, why: 'A repeatable problem and its error message give useful clues.' },
+    { topic: 'JavaScript', question: 'What can JavaScript add to a webpage?', options: ['Interactive behavior', 'More sunlight', 'A stronger keyboard', 'A faster chair'], answer: 0, why: 'JavaScript can respond to clicks and update page content.' },
+    { topic: 'Python', question: 'What does print("Hello!") do in Python?', options: ['Shows Hello! as output', 'Deletes a file', 'Starts a video', 'Changes the keyboard'], answer: 0, why: 'The print function displays a value as output.' },
+    { topic: 'Good design', question: 'A button is green and another is red. What else helps people tell them apart?', options: ['Give each a clear text label', 'Make both smaller', 'Hide one label', 'Use color alone'], answer: 0, why: 'Text labels make meaning clear without relying on color alone.' },
+    { topic: 'AI and data', question: 'Why can the examples used to train an AI matter?', options: ['They can shape what the AI learns and misses', 'They choose the screen size', 'They charge the device', 'They always make the AI fair'], answer: 0, why: 'Training examples influence an AI’s patterns and limitations.' },
+    { topic: 'Web access', question: 'What is helpful text for an image called?', options: ['Alt text', 'Wi-Fi text', 'Pixel text', 'Secret text'], answer: 0, why: 'Alt text describes an image for people who use screen readers.' },
+    { topic: 'Critical thinking', question: 'An AI suggests code for your project. What comes next?', options: ['Run and review it safely', 'Publish it without looking', 'Assume it has no bugs', 'Share your password with it'], answer: 0, why: 'Reviewing and testing helps catch mistakes before you use code.' }
+  ];
+  let partyMode = 'solo';
+  let partySession = null;
+  let partyTimerId = null;
+  let onlineParty = null;
+  let onlinePollId = null;
+  let onlinePollBusy = false;
+  let onlineMessageCursor = 0;
+  let onlineGameClock = null;
+  let onlineRoomSignature = '';
   const gameStoreKey = () => `student-arcade:${state.profileId}`;
   function loadGameData() {
     try { state.gameData = JSON.parse(localStorage.getItem(gameStoreKey()) || '{"xp":0,"cleared":[],"days":[]}'); }
@@ -187,8 +252,10 @@
     state.gameData.courseCompleted ||= [];
     state.gameData.courseNotes ||= {};
     state.gameData.dailyCompleted ||= {};
+    state.gameData.rewards ||= [];
+    state.gameData.coins ||= 0;
   }
-  function saveGameData() { localStorage.setItem(gameStoreKey(), JSON.stringify(state.gameData)); updateArcadeScore(); }
+  function saveGameData() { localStorage.setItem(gameStoreKey(), JSON.stringify(state.gameData)); updateArcadeScore(); renderRewards(); }
   function studentIdFor(profileId) {
     const key = `student-arcade-id:${profileId}`;
     const saved = localStorage.getItem(key);
@@ -200,7 +267,10 @@
   }
   function recordMission(key) {
     const already = state.gameData.cleared.includes(key);
-    if (!already) { state.gameData.cleared.push(key); state.gameData.xp += 20; }
+    if (!already) {
+      state.gameData.cleared.push(key); state.gameData.xp += 20; state.gameData.coins += 10;
+      state.gameData.rewards.push(`mission-${key}`);
+    }
     saveGameData();
     const area = $(`#${key}-game`);
     area.innerHTML = `<div class="game-feedback correct-feedback">${already ? 'Mission already cleared. ' : '+20 points! '}${escapeHtml(gameBanks[state.gameLevel][key].success)}</div>`;
@@ -245,12 +315,315 @@
   function updatePieceNumbers(sorter) { [...sorter.querySelectorAll('.tag-piece')].forEach((piece, index) => { piece.querySelector('.drag-label').textContent = String(index + 1); }); }
   function updateArcadeScore() {
     $('#arcade-xp').textContent = String(state.gameData.xp);
+    $('#arcade-coins').textContent = String(state.gameData.coins || 0);
+    $('#arcade-badge-count').textContent = String(state.gameData.rewards?.length || 0);
     const clears = state.gameData.cleared.filter(key => key.startsWith(`${state.gameLevel}-`)).length;
     $('#missions-complete').textContent = `${clears} of 4 cleared`;
     $('#arcade-progress').style.width = `${Math.min(100, clears / 4 * 100)}%`;
     $('#arcade-next').textContent = clears === 4 ? 'All missions cleared. Great work!' : `${4 - clears} mission${4 - clears === 1 ? '' : 's'} left to clear in this mode.`;
     const streak = calculateStreak(state.gameData.days);
     $('#streak-days').textContent = `${streak} ${streak === 1 ? 'day' : 'days'}`;
+    renderRewards();
+  }
+  function renderRewards() {
+    const labels = { 'mission-foundations-color': ['Color Coder', '🎨'], 'mission-foundations-prompt': ['Prompt Pilot', '🛩️'], 'mission-foundations-tag': ['Tag Builder', '🧱'], 'mission-foundations-bug': ['Bug Detective', '🔎'], 'code-party-board': ['Code Party Champion', '🏆'], 'team-ai-detective': ['AI Detective', '🕵️'], 'team-color-rush': ['Color Rush', '🌈'], 'team-bug-bash': ['Bug Bash', '🐞'] };
+    const earned = [...new Set(state.gameData.rewards || [])];
+    $('#arcade-rewards').innerHTML = earned.length ? earned.map(key => { const normalized = key.replace('mission-intermediate-', 'mission-foundations-').replace('mission-advanced-', 'mission-foundations-'); const [name, icon] = labels[normalized] || ['Learning Star', '⭐']; return `<span class="reward-chip" title="${escapeHtml(name)}"><span aria-hidden="true">${icon}</span>${escapeHtml(name)}</span>`; }).join('') : '<span class="reward-empty">Play a mini-game to earn your first badge.</span>';
+  }
+  function renderPartyNames() {
+    const count = Number($('#party-player-count').value || 2);
+    $('#party-player-names').innerHTML = Array.from({ length: count }, (_, index) => `<label class="field">Player ${index + 1} nickname<input data-party-name="${index}" maxlength="12" value="Player ${index + 1}" autocomplete="off"></label>`).join('');
+  }
+  function getPartyPlayers() {
+    const count = partyMode === 'solo' ? 1 : Number($('#party-player-count').value || 2);
+    return Array.from({ length: count }, (_, index) => {
+      const value = partyMode === 'solo' ? 'You' : $(`[data-party-name="${index}"]`)?.value.trim();
+      return { name: (value || `Player ${index + 1}`).slice(0, 12), points: 0, streak: 0, position: 0 };
+    });
+  }
+  function renderPartyBoard() {
+    if (!partySession) return;
+    const coords = [[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[1,5],[1,4],[1,3],[1,2]];
+    const tileMarkup = coords.map(([column,row], index) => {
+      const kind = index % 4 === 0 ? 'star' : index % 4 === 2 ? 'coin' : 'trail';
+      const icon = kind === 'star' ? '★' : kind === 'coin' ? '+80' : `${index + 1}`;
+      const tokens = partySession.players.map((player, playerIndex) => player.position === index ? `<span class="party-token token-${playerIndex}" title="${escapeHtml(player.name)}">${escapeHtml(player.name.slice(0,1).toUpperCase())}</span>` : '').join('');
+      return `<div class="party-tile tile-${kind}${index === 0 ? ' tile-start' : ''}" data-space="${index}" style="grid-column:${column};grid-row:${row}" aria-label="Space ${index + 1}${kind === 'star' ? ', star bonus' : kind === 'coin' ? ', coin bonus' : ''}"><span class="party-tile-icon">${icon}</span>${tokens}</div>`;
+    }).join('');
+    $('#party-board').innerHTML = `${tileMarkup}<div class="party-board-center"><strong>CODE PARTY</strong><span>Round ${Math.min(partySession.turn + 1, partySession.totalTurns)} / ${partySession.totalTurns}</span><span>Roll · learn · score</span></div>`;
+  }
+  function renderPartyScoreboard() {
+    if (!partySession) return;
+    const active = partySession.players[partySession.turn % partySession.players.length];
+    $('#party-scoreboard').innerHTML = [...partySession.players].sort((a,b) => b.points - a.points).map((player,index) => `<div class="party-player-score${player === active ? ' is-current' : ''}"><span class="party-rank">${index + 1}</span><span class="party-player-dot token-${partySession.players.indexOf(player)}">${escapeHtml(player.name.slice(0,1).toUpperCase())}</span><strong>${escapeHtml(player.name)}</strong><b>${player.points}</b></div>`).join('');
+  }
+  function renderPartyTurn() {
+    if (!partySession) return;
+    clearInterval(partyTimerId);
+    const player = partySession.players[partySession.turn % partySession.players.length];
+    const question = partySession.questions[partySession.turn % partySession.questions.length];
+    partySession.remaining = 20;
+    partySession.answered = false;
+    $('#party-turn-label').textContent = partySession.mode === 'party' ? `${player.name} · your turn` : `Question ${partySession.turn + 1} of ${partySession.totalTurns}`;
+    $('#party-timer-value').textContent = '20';
+    $('#party-timer-fill').style.width = '100%';
+    $('#party-question-topic').textContent = question.topic;
+    $('#party-question-text').textContent = question.question;
+    $('#party-question-options').innerHTML = question.options.map((option,index) => `<button class="party-option option-${index}" type="button" data-party-answer="${index}"><span>${String.fromCharCode(65+index)}</span>${escapeHtml(option)}</button>`).join('');
+    $('#party-answer-feedback').textContent = partySession.mode === 'party' ? `Pass the device to ${player.name}, then choose an answer.` : 'Choose quickly for a bigger streak bonus.';
+    $('#party-roll').hidden = true;
+    $('#party-next').hidden = true;
+    renderPartyBoard();
+    renderPartyScoreboard();
+    partyTimerId = setInterval(() => {
+      if (!partySession || partySession.answered) return;
+      partySession.remaining -= 1;
+      $('#party-timer-value').textContent = String(Math.max(0,partySession.remaining));
+      $('#party-timer-fill').style.width = `${Math.max(0,partySession.remaining) / 20 * 100}%`;
+      if (partySession.remaining <= 0) answerParty(null);
+    }, 1000);
+  }
+  function answerParty(answer) {
+    if (!partySession || partySession.answered) return;
+    partySession.answered = true;
+    clearInterval(partyTimerId);
+    const player = partySession.players[partySession.turn % partySession.players.length];
+    const question = partySession.questions[partySession.turn % partySession.questions.length];
+    const correct = answer !== null && Number(answer) === question.answer;
+    $$('.party-option', $('#party-question-options')).forEach((button,index) => {
+      button.disabled = true;
+      if (index === question.answer) button.classList.add('is-correct');
+      else if (answer !== null && index === Number(answer)) button.classList.add('is-wrong');
+    });
+    if (correct) {
+      player.streak += 1;
+      const earned = 100 + player.streak * 25 + partySession.remaining * 5;
+      player.points += earned;
+      $('#party-answer-feedback').textContent = `Correct! +${earned} points. ${question.why}`;
+      $('#party-answer-feedback').className = 'party-feedback is-correct';
+    } else {
+      player.streak = 0;
+      const correctText = question.options[question.answer];
+      $('#party-answer-feedback').textContent = `${answer === null ? 'Time’s up!' : 'Not quite.'} The answer is “${correctText}.” ${question.why}`;
+      $('#party-answer-feedback').className = 'party-feedback is-incorrect';
+    }
+    renderPartyScoreboard();
+    $('#party-roll').hidden = false;
+  }
+  function rollPartyDie() {
+    if (!partySession) return;
+    const player = partySession.players[partySession.turn % partySession.players.length];
+    const roll = 1 + Math.floor(Math.random() * 6);
+    player.position = (player.position + roll) % 16;
+    const landed = player.position;
+    let bonus = 0;
+    let note = `You rolled ${roll} and moved ${roll} spaces.`;
+    if (landed % 4 === 0) { bonus = 250; note += ' Star space! +250 points.'; }
+    else if (landed % 4 === 2) { bonus = 80; note += ' Coin space! +80 points.'; }
+    player.points += bonus;
+    renderPartyBoard();
+    renderPartyScoreboard();
+    $('#party-answer-feedback').textContent = note;
+    $('#party-answer-feedback').className = 'party-feedback is-correct';
+    $('#party-roll').hidden = true;
+    if (partySession.turn + 1 >= partySession.totalTurns) finishParty();
+    else $('#party-next').hidden = false;
+  }
+  function finishParty() {
+    clearInterval(partyTimerId);
+    const ranked = [...partySession.players].sort((a,b) => b.points - a.points);
+    const winner = ranked[0];
+    const storageKey = `code-party-best:${state.profileId}`;
+    let records = [];
+    try { records = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { records = []; }
+    records.push({ name: winner.name, points: winner.points, date: new Date().toISOString() });
+    records.sort((a,b) => b.points - a.points);
+    localStorage.setItem(storageKey,JSON.stringify(records.slice(0,5)));
+    state.gameData.xp += 25;
+    state.gameData.coins = (state.gameData.coins || 0) + 15;
+    state.gameData.rewards ||= [];
+    if (!state.gameData.rewards.includes('code-party-board')) state.gameData.rewards.push('code-party-board');
+    const today = dateKey(new Date());
+    if (!state.gameData.days.includes(today)) state.gameData.days.push(today);
+    saveGameData();
+    $('#party-results').hidden = false;
+    $('#party-results').innerHTML = `<div class="party-winner-mark" aria-hidden="true">🏆</div><p class="eyebrow">ROUND COMPLETE · +25 LEARNING XP · +15 COINS</p><h3>${partySession.players.length > 1 ? `${escapeHtml(winner.name)} wins!` : 'Sprint complete!'}</h3><p>Code Party Champion badge earned. Great work playing, learning, and checking your answers.</p><div class="party-final-scores">${ranked.map((player,index) => `<div><span>${index === 0 ? '★' : index + 1}</span><strong>${escapeHtml(player.name)}</strong><b>${player.points.toLocaleString()} points</b></div>`).join('')}</div>`;
+    $('#party-question-card').hidden = true;
+    $('#party-again').hidden = false;
+    $('#party-next').hidden = true;
+  }
+  function startParty() {
+    const players = getPartyPlayers();
+    if (partyMode === 'party' && players.some(player => !player.name.trim())) return;
+    partySession = { mode: partyMode, players, turn: 0, totalTurns: partyMode === 'solo' ? 8 : players.length * 3, questions: [...partyQuestions].sort(() => Math.random() - .5), remaining: 20, answered: false };
+    $('#party-setup').hidden = true;
+    $('#party-arena').hidden = false;
+    $('#party-results').hidden = true;
+    $('#party-question-card').hidden = false;
+    $('#party-again').hidden = true;
+    renderPartyTurn();
+  }
+  function leaveParty() {
+    clearInterval(partyTimerId);
+    partySession = null;
+    $('#party-arena').hidden = true;
+    $('#party-setup').hidden = false;
+  }
+  function onlineStatus(message, target = '#party-online-status') { $(target).textContent = message; }
+  function saveOnlineParty() {
+    if (onlineParty) sessionStorage.setItem('learncode-party-session', JSON.stringify({ code: onlineParty.code, token: onlineParty.token, id: onlineParty.id }));
+    else sessionStorage.removeItem('learncode-party-session');
+  }
+  function onlineHeaders() { return onlineParty ? { 'X-Party-Session': onlineParty.token } : {}; }
+  async function onlineRequest(path, body, method = 'POST') {
+    return api(path, { method, ...(body === undefined ? {} : { body: JSON.stringify(body) }), headers: onlineHeaders() });
+  }
+  async function createOnlineRoom() {
+    onlineStatus('Creating your private room…');
+    try {
+      const result = await api('/api/party/rooms', { method: 'POST', body: JSON.stringify({ nickname: $('#online-party-name').value.trim() }) });
+      onlineParty = { code: result.state.code, token: result.token, id: result.state.me, host: true };
+      onlineMessageCursor = 0; saveOnlineParty(); openOnlineRoom(result.state); onlineStatus('Room ready. Share the code with your friends.');
+    } catch (error) { onlineStatus(error.message); }
+  }
+  async function joinOnlineRoom() {
+    const code = $('#party-room-code').value.trim().toUpperCase();
+    $('#party-room-code').value = code;
+    onlineStatus('Joining the room…');
+    try {
+      const result = await api(`/api/party/rooms/${encodeURIComponent(code)}/join`, { method: 'POST', body: JSON.stringify({ nickname: $('#online-party-name').value.trim() }) });
+      onlineParty = { code: result.state.code, token: result.token, id: result.state.me, host: result.state.host === result.state.me };
+      onlineMessageCursor = 0; saveOnlineParty(); openOnlineRoom(result.state); onlineStatus('You’re in. Say hi to the group.');
+    } catch (error) { onlineStatus(error.message); }
+  }
+  function openOnlineRoom(initialState) {
+    clearInterval(onlinePollId); clearInterval(onlineGameClock);
+    $('#party-setup').hidden = true;
+    $('#party-arena').hidden = true;
+    $('#party-online-arena').hidden = false;
+    $('#online-room-code').textContent = onlineParty.code;
+    $('#online-chat-messages').replaceChildren();
+    onlineRoomSignature = '';
+    $('#online-game-stage').innerHTML = '<p class="online-waiting">Waiting for the host to start a game…</p>';
+    $('#online-host-controls').hidden = !onlineParty.host;
+    renderOnlineRoom(initialState);
+    onlinePoll();
+    onlinePollId = setInterval(onlinePoll, 1600);
+  }
+  function renderOnlineRoom(room) {
+    if (!room || !onlineParty) return;
+    $('#online-room-code').textContent = room.code;
+    const host = room.host === room.me;
+    onlineParty.host = host;
+    $('#online-room-hint').textContent = host ? 'You’re hosting. Share the code, then start a game.' : 'You’re in the room. The host will start the next game.';
+    $('#online-host-controls').hidden = !host || Boolean(room.game && room.game.phase !== 'complete');
+    $('#online-player-count').textContent = String(room.players.length);
+    $('#online-player-list').innerHTML = room.players.map((player, index) => `<div class="online-player"><span class="online-player-avatar online-avatar-${index % 4}">${escapeHtml(player.nickname.slice(0,1).toUpperCase())}</span><strong>${escapeHtml(player.nickname)}${player.id === room.me ? ' · you' : ''}</strong><span class="online-score">${Number(player.score).toLocaleString()} pts</span>${player.id === room.host ? '<span class="host-tag">HOST</span>' : ''}</div>`).join('') || '<p class="online-waiting">Waiting for players…</p>';
+    const signature = JSON.stringify({ host: room.host, me: room.me, players: room.players, game: room.game });
+    if (signature !== onlineRoomSignature) { onlineRoomSignature = signature; renderOnlineGame(room.game, room.players, room.me); }
+  }
+  function renderOnlineGame(game, players, me) {
+    const stage = $('#online-game-stage');
+    clearInterval(onlineGameClock);
+    if (!game) { stage.innerHTML = '<p class="online-waiting">Waiting for the host to start a game… Choose AI Detective, Color Rush, or Bug Bash.</p>'; return; }
+    const scoreboard = `<div class="online-scoreboard">${players.slice().sort((a,b) => b.score - a.score).map((player,index) => `<div class="online-score-line"><span>${index === 0 && Number(player.score) > 0 ? '★' : index + 1}</span><strong>${escapeHtml(player.nickname)}</strong><b>${Number(player.score).toLocaleString()}</b></div>`).join('')}</div>`;
+    if (game.phase === 'complete') {
+      const badgeNames = { 'ai-detective': 'AI Detective', 'color-rush': 'Color Rush', 'bug-bash': 'Bug Bash' };
+      const winner = game.winner?.nickname || 'Your team';
+      stage.innerHTML = `${scoreboard}<div class="online-complete"><span class="reward-medal">🏆</span><p class="eyebrow">GROUP GAME COMPLETE</p><h4>${escapeHtml(winner)} leads the board!</h4><p>Everyone earned the ${escapeHtml(badgeNames[game.mode] || 'Quiz Party')} badge. Play another round to collect more.</p>${onlineParty?.host ? '<button id="online-play-again" class="button primary" type="button">Play another game</button>' : '<p>Ask the host to start another game.</p>'}</div>`;
+      $('#online-play-again')?.addEventListener('click', startOnlineGame);
+      state.gameData.rewards ||= [];
+      const badge = `team-${game.mode}`;
+      if (!state.gameData.rewards.includes(badge)) {
+        state.gameData.xp += 25;
+        state.gameData.coins = (state.gameData.coins || 0) + 20;
+        state.gameData.rewards.push(badge);
+        saveGameData();
+      }
+      return;
+    }
+    if (!game.question) { stage.innerHTML = scoreboard; return; }
+    const remaining = Math.max(0, Math.ceil((Number(game.deadline) - Date.now() / 1000)));
+    const reveal = game.phase === 'reveal';
+    const answers = game.playersAnswered || {};
+    const answeredNames = players.filter(player => answers[player.id]).map(player => player.nickname);
+    const response = reveal
+      ? `<p class="online-feedback ${answers[me]?.correct ? 'is-correct' : ''}">${answers[me] ? (answers[me].correct ? `Nice answer · +${answers[me].points} points.` : 'Round complete. Try the next one.') : 'Time is up for this round.'} ${escapeHtml(game.question.why || '')}</p>`
+      : `<p class="online-feedback">${game.hasAnswered ? 'Your answer is in. ' : 'Pick an answer before the timer ends. '}${game.answered}/${players.length} answered</p>`;
+    stage.innerHTML = `${scoreboard}<div class="online-question"><div class="online-question-meta"><span class="party-topic">${escapeHtml(game.title)} · ROUND ${game.round}/${game.total}</span><span class="online-countdown" data-deadline="${Number(game.deadline)}">${remaining}s</span></div><h4>${escapeHtml(game.question.question)}</h4><div class="online-options">${game.question.options.map((option,index) => `<button type="button" class="online-option${reveal && index === game.question.answer ? ' correct' : ''}${reveal && answers[me]?.choice === index && !answers[me]?.correct ? ' incorrect' : ''}" data-online-choice="${index}" ${game.hasAnswered || reveal ? 'disabled' : ''}>${String.fromCharCode(65+index)} · ${escapeHtml(option)}</button>`).join('')}</div>${response}<p class="online-answered">${answeredNames.length ? `${answeredNames.map(escapeHtml).join(', ')} ${answeredNames.length === 1 ? 'has' : 'have'} answered.` : 'Be the first to answer!'}</p></div>`;
+    $$('[data-online-choice]', stage).forEach(button => button.addEventListener('click', () => submitOnlineAnswer(Number(button.dataset.onlineChoice))));
+    if (!reveal) onlineGameClock = setInterval(() => {
+      const timer = $('[data-deadline]', stage);
+      if (!timer) return;
+      timer.textContent = `${Math.max(0, Math.ceil(Number(timer.dataset.deadline) - Date.now() / 1000))}s`;
+    }, 300);
+  }
+  function appendOnlineMessages(messages = []) {
+    const list = $('#online-chat-messages');
+    messages.forEach(message => {
+      const item = document.createElement('article');
+      item.className = `online-chat-message${message.player_id === onlineParty?.id ? ' own-message' : ''}`;
+      const meta = document.createElement('div'); meta.className = 'online-message-meta';
+      const name = document.createElement('strong'); name.textContent = message.nickname;
+      const time = document.createElement('time'); time.textContent = new Date(Number(message.created_at) * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      const text = document.createElement('p'); text.textContent = message.body;
+      meta.append(name, time); item.append(meta, text); list.append(item);
+      onlineMessageCursor = Math.max(onlineMessageCursor, Number(message.id));
+    });
+    if (messages.length) list.scrollTop = list.scrollHeight;
+  }
+  async function onlinePoll() {
+    if (!onlineParty || onlinePollBusy) return;
+    onlinePollBusy = true;
+    try {
+      const result = await onlineRequest(`/api/party/rooms/${onlineParty.code}?since=${onlineMessageCursor}`, undefined, 'GET');
+      renderOnlineRoom(result.state); appendOnlineMessages(result.state.messages);
+      $('#online-chat-status').textContent = '';
+    } catch (error) {
+      onlineStatus(error.message, '#online-chat-status');
+      if (error.data?.message?.includes('session expired')) closeOnlineRoom(false);
+    } finally { onlinePollBusy = false; }
+  }
+  async function sendOnlineMessage(event) {
+    event.preventDefault();
+    const input = $('#online-chat-input'); const message = input.value.trim();
+    if (!message || !onlineParty) return;
+    $('#online-chat-status').textContent = 'Sending…';
+    try { await onlineRequest(`/api/party/rooms/${onlineParty.code}/messages`, { message }); input.value = ''; $('#online-chat-status').textContent = ''; await onlinePoll(); }
+    catch (error) { onlineStatus(error.message, '#online-chat-status'); }
+  }
+  async function startOnlineGame() {
+    if (!onlineParty) return;
+    $('#online-game-start').disabled = true;
+    try {
+      await onlineRequest(`/api/party/rooms/${onlineParty.code}/start`, { mode: $('#online-game-choice').value });
+      await onlinePoll();
+    } catch (error) { onlineStatus(error.message); }
+    finally { $('#online-game-start').disabled = false; }
+  }
+  async function submitOnlineAnswer(choice) {
+    if (!onlineParty) return;
+    $$('[data-online-choice]').forEach(button => { button.disabled = true; });
+    try { await onlineRequest(`/api/party/rooms/${onlineParty.code}/answer`, { choice }); await onlinePoll(); }
+    catch (error) { onlineStatus(error.message, '#online-chat-status'); await onlinePoll(); }
+  }
+  async function closeOnlineRoom(sendLeave = true) {
+    if (!onlineParty) return;
+    clearInterval(onlinePollId); clearInterval(onlineGameClock);
+    if (sendLeave) await onlineRequest(`/api/party/rooms/${onlineParty.code}/leave`, {}).catch(() => {});
+    onlineParty = null; onlinePollId = null; saveOnlineParty();
+    onlineRoomSignature = '';
+    $('#party-online-arena').hidden = true; $('#party-setup').hidden = false;
+    $('#party-online-status').textContent = 'You left the game room.';
+  }
+  async function restoreOnlineRoom() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('learncode-party-session') || 'null');
+      if (!saved?.code || !saved?.token || !saved?.id) return;
+      onlineParty = saved; onlineMessageCursor = 0;
+      const response = await onlineRequest(`/api/party/rooms/${onlineParty.code}?since=0`, undefined, 'GET');
+      openOnlineRoom(response.state);
+    } catch { sessionStorage.removeItem('learncode-party-session'); }
   }
   function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
   function calculateStreak(days) {
@@ -264,6 +637,16 @@
   function localDayNumber(date) { return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000); }
   function dailyDateAtOffset(offset) { const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() + offset); return date; }
   function renderDailyAi() {
+    const trialKey = `learner-started:${state.profileId}`;
+    const startedAt = Number(localStorage.getItem(trialKey) || Date.now());
+    if (!localStorage.getItem(trialKey)) localStorage.setItem(trialKey, String(startedAt));
+    const trialDay = Math.floor((Date.now() - startedAt) / 86400000);
+    if (trialDay >= 14 && !state.isPremium) {
+      $('#daily-date-label').textContent = 'Free period complete';
+      $('#daily-lesson').innerHTML = '<article class="daily-lesson"><h3>Your 14-day AI learning start is complete</h3><p>You can keep your completed practice. LeArNCoDiNg Plus unlocks continued AI concepts and the Python and web development paths.</p><button class="button primary" type="button" data-open-membership>Explore LeArNCoDiNg Plus</button></article>';
+      $('[data-open-membership]', $('#daily-lesson')).addEventListener('click', () => $('#membership-card').scrollIntoView({ behavior: 'smooth', block: 'center' }));
+      return;
+    }
     const date = dailyDateAtOffset(state.dailyOffset);
     const key = dateKey(date);
     const dayNumber = ((localDayNumber(date) % dailyAiLessons.length) + dailyAiLessons.length) % dailyAiLessons.length;
@@ -334,21 +717,35 @@
     $('#course-progress-track').setAttribute('aria-valuenow', String(finished));
     $('#course-grid').innerHTML = creatorQuest.map((lesson, index) => {
       const done = completed.has(index);
-      const locked = index > 0 && !completed.has(index - 1) && !done;
-      const action = locked ? 'Locked' : done ? 'Review lesson' : 'Start lesson';
-      return `<article class="course-card${done ? ' is-complete' : ''}${locked ? ' is-locked' : ''}"><div class="course-card-top"><span class="course-number">${String(index + 1).padStart(2, '0')}</span><span class="course-time">${done ? '✓ Complete' : '10 min'}</span></div><p class="eyebrow">${escapeHtml(lesson.theme)}</p><h3>${escapeHtml(lesson.title)}</h3><p>${escapeHtml(lesson.goal)}</p><button class="button${done ? '' : ' primary'}" type="button" data-course-open="${index}" ${locked ? 'disabled' : ''}>${action}</button></article>`;
+      const paidLock = index >= 2 && !state.isPremium;
+      const sequenceLock = index > 0 && !completed.has(index - 1) && !done && !paidLock;
+      const locked = paidLock || sequenceLock;
+      const action = paidLock ? 'Unlock with Plus' : sequenceLock ? 'Finish previous lesson' : done ? 'Review lesson' : 'Start lesson';
+      return `<article class="course-card${done ? ' is-complete' : ''}${locked ? ' is-locked' : ''}${paidLock ? ' is-premium-locked' : ''}"><div class="course-card-top"><span class="course-number">${String(index + 1).padStart(2, '0')}</span><span class="course-time">${done ? 'Complete' : paidLock ? 'Plus' : '10 min'}</span></div><p class="eyebrow">${escapeHtml(lesson.theme)}</p><h3>${escapeHtml(lesson.title)}</h3><p>${escapeHtml(lesson.goal)}</p><button class="button${done ? '' : ' primary'}" type="button" ${paidLock ? `data-course-premium="${index}"` : `data-course-open="${index}"`} ${sequenceLock ? 'disabled' : ''}>${action}</button></article>`;
     }).join('');
   }
+
+  const questStoryBeats = [
+    'The student maker lab has one afternoon to design a tiny learning tool. The team needs a clear plan before anyone starts building.',
+    'The first page is hard to read from the lab tables. Give it a calm color system and make the important information easy to spot.',
+    'The project needs useful controls. Make the page respond when a learner takes an action.',
+    'A new student cannot use the mouse today. Check that the project still works with a keyboard and clear labels.',
+    'The team added an AI helper. Decide what it should do, what it should not do, and how a learner can check its answer.',
+    'Before showing the project, test it on a small screen, look for mistakes, and remove private information.',
+    'The maker lab wants a Python welcome screen. Print a friendly message and save a learner’s chosen topic in a variable.',
+    'The project should give different study advice for short and long sessions. Add a clear if/else decision.',
+    'The lab has several study topics to show. Use a list and a loop so new topics are easy to add.'
+  ];
 
   function openCourseLesson(index) {
     const lesson = creatorQuest[index];
     if (!lesson) return;
     const completed = new Set(state.gameData.courseCompleted || []);
-    if (index > 0 && !completed.has(index - 1) && !completed.has(index)) return;
+    if ((index >= 2 && !state.isPremium) || (index > 0 && !completed.has(index - 1) && !completed.has(index))) return;
     const note = state.gameData.courseNotes?.[index] || '';
-    $('#course-lesson-meta').textContent = `LESSON ${String(index + 1).padStart(2, '0')} OF 06 · ABOUT 10 MINUTES`;
+    $('#course-lesson-meta').textContent = `LESSON ${String(index + 1).padStart(2, '0')} OF ${String(creatorQuest.length).padStart(2, '0')} · ABOUT 10 MINUTES`;
     $('#course-lesson-title').textContent = lesson.title;
-    $('#course-lesson-body').innerHTML = `<p class="course-goal">${escapeHtml(lesson.goal)}</p><section class="lesson-reading"><h3>Learn it</h3>${lesson.learn.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join('')}</section><section class="lesson-activity"><div><p class="eyebrow">YOUR 5-MINUTE BUILD</p><h3>Try it now</h3><ol>${lesson.activity.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol><p><strong>Want a challenge?</strong> ${escapeHtml(lesson.stretch)}</p></div></section><section class="lesson-check"><p class="eyebrow">CHECKPOINT</p><h3>${escapeHtml(lesson.question)}</h3><div class="lesson-answers">${lesson.options.map((option, optionIndex) => `<button type="button" class="lesson-answer" data-course-answer="${optionIndex}">${escapeHtml(option)}</button>`).join('')}</div><p id="course-answer-feedback" class="course-answer-feedback" role="status" aria-live="polite"></p></section><label class="field lesson-reflection">What did you make or learn? <span class="muted">(optional)</span><textarea id="course-reflection" rows="3" maxlength="400" placeholder="Write one thing you want to remember…">${escapeHtml(note)}</textarea></label><div class="lesson-footer"><span id="course-xp-note" class="muted">Pass the checkpoint to save this lesson and earn 50 XP.</span><button id="course-finish" class="button primary" type="button" disabled>Save checkpoint</button></div>`;
+    $('#course-lesson-body').innerHTML = `<aside class="quest-story-beat"><span class="eyebrow">MISSION ${String(index + 1).padStart(2, '0')} · MAKER LAB STORY</span><p>${escapeHtml(questStoryBeats[index] || 'The maker lab has a new challenge. Use your skills, try an idea, and check your work.')}</p></aside><p class="course-goal">${escapeHtml(lesson.goal)}</p><section class="lesson-reading"><h3>Learn it</h3>${lesson.learn.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join('')}</section><section class="lesson-activity"><div><p class="eyebrow">YOUR 5-MINUTE BUILD</p><h3>Try it now</h3><ol>${lesson.activity.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol><p><strong>Want a challenge?</strong> ${escapeHtml(lesson.stretch)}</p></div></section><section class="lesson-check"><p class="eyebrow">CHECKPOINT</p><h3>${escapeHtml(lesson.question)}</h3><div class="lesson-answers">${lesson.options.map((option, optionIndex) => `<button type="button" class="lesson-answer" data-course-answer="${optionIndex}">${escapeHtml(option)}</button>`).join('')}</div><p id="course-answer-feedback" class="course-answer-feedback" role="status" aria-live="polite"></p></section><label class="field lesson-reflection">What did you make or learn? <span class="muted">(optional)</span><textarea id="course-reflection" rows="3" maxlength="400" placeholder="Write one thing you want to remember…">${escapeHtml(note)}</textarea></label><div class="lesson-footer"><span id="course-xp-note" class="muted">Pass the checkpoint to save this lesson and earn 50 XP.</span><button id="course-finish" class="button primary" type="button" disabled>Save checkpoint</button></div>`;
     $('#course-lesson-body').dataset.courseIndex = String(index);
     $('#course-dialog').showModal();
     $$('#course-lesson-body [data-course-answer]').forEach(button => button.addEventListener('click', () => {
@@ -425,6 +822,124 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (viewName === 'survey') updateProgress();
   }
+  function initialsFor(name) {
+    return String(name || 'LeArNCoDiNg').trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase().slice(0, 2) || 'LC';
+  }
+  function renderAvatar(initials, color) {
+    const safeInitials = String(initials || 'LC').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 2) || 'LC';
+    const safeColor = /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#6c4ccf';
+    state.avatarColor = safeColor;
+    for (const avatar of [$('#profile-avatar'), $('#profile-preview')]) {
+      avatar.textContent = safeInitials;
+      avatar.style.setProperty('--avatar-color', safeColor);
+    }
+    $('#profile-initials').value = safeInitials;
+    $$('[data-avatar-color]').forEach(button => {
+      const selected = button.dataset.avatarColor.toLowerCase() === safeColor.toLowerCase();
+      button.classList.toggle('selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  }
+  function renderProfile(profile) {
+    state.account = profile;
+    const defaultInitials = initialsFor(profile.name);
+    const displayName = String(profile.name || profile.email || 'Your account').trim();
+    $('#profile-label').textContent = displayName.split(/\s+/)[0];
+    $('#profile-email').textContent = profile.email || 'Signed in with Google';
+    const key = `learncode-avatar:${state.profileId}`;
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch { saved = {}; }
+    renderAvatar(saved.initials || defaultInitials, saved.color || '#6c4ccf');
+    $('#profile-button').hidden = false;
+  }
+  function openCobit() {
+    const panel = $('#cobit-panel');
+    const frame = $('#cobit-frame');
+    panel.hidden = false;
+    $('#cobit-toggle').setAttribute('aria-expanded', 'true');
+    if (!frame.hasAttribute('src')) frame.src = frame.dataset.src;
+    $('#cobit-close').focus();
+  }
+  function closeCobit() {
+    $('#cobit-panel').hidden = true;
+    $('#cobit-toggle').setAttribute('aria-expanded', 'false');
+    $('#cobit-toggle').focus();
+  }
+  function renderMembership(message = '') {
+    const card = $('#membership-card');
+    const button = $('#membership-cta');
+    const manage = $('#membership-manage');
+    card.classList.toggle('is-active', state.isPremium);
+    button.hidden = state.isPremium;
+    manage.hidden = !state.isPremium || !state.checkoutEnabled;
+    if (state.isPremium) {
+      $('#membership-status').textContent = message || 'LeArNCoDiNg Plus is active on your account.';
+      button.textContent = 'Plus membership active';
+      button.disabled = true;
+      $('#membership-note').textContent = 'Your full creator quest and advanced learning paths are unlocked.';
+    } else if (state.checkoutEnabled) {
+      $('#membership-status').textContent = message || 'Unlock the full creator quest and advanced learning paths.';
+      button.textContent = 'Continue to secure checkout';
+      button.disabled = false;
+      $('#membership-note').textContent = 'Price and billing terms are shown by the payment provider before you confirm.';
+    } else {
+      $('#membership-status').textContent = message || 'Your free daily lesson, article, and mini-games are ready. Plus lessons are locked until membership checkout is set up.';
+      button.textContent = 'Membership checkout is not ready yet';
+      button.disabled = true;
+      $('#membership-note').textContent = 'The site owner must connect the payment account and plan before purchases can be made.';
+    }
+  }
+  async function refreshMembership() {
+    let returnMessage = '';
+    const params = new URLSearchParams(window.location.search);
+    const checkoutSession = params.get('membership_session');
+    if (checkoutSession) {
+      try {
+        const result = await api('/api/billing/confirm', { method: 'POST', body: JSON.stringify({ session_id: checkoutSession }) });
+        state.isPremium = Boolean(result.premium);
+        returnMessage = result.premium ? 'Payment confirmed. Your Plus lessons are unlocked.' : 'We could not confirm membership yet. You can refresh in a moment.';
+      } catch (error) { returnMessage = error.message; }
+      params.delete('membership_session');
+      const cleanUrl = `${window.location.pathname}${params.size ? `?${params}` : ''}${window.location.hash}`;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+    try {
+      const status = await api('/api/billing/status');
+      state.checkoutEnabled = Boolean(status.checkout_enabled);
+      state.isPremium = Boolean(status.premium);
+      renderMembership(returnMessage);
+    } catch (error) {
+      state.checkoutEnabled = false;
+      renderMembership(returnMessage || error.message);
+    }
+    renderCoursePath();
+  }
+  async function startMembershipCheckout() {
+    const button = $('#membership-cta');
+    button.disabled = true;
+    button.textContent = 'Opening secure checkout…';
+    try {
+      const result = await api('/api/billing/checkout', { method: 'POST', body: JSON.stringify({}) });
+      if (!result.checkout_url || !new URL(result.checkout_url).hostname.endsWith('stripe.com')) throw new Error('The secure checkout link could not be verified.');
+      window.location.assign(result.checkout_url);
+    } catch (error) {
+      renderMembership(error.message);
+    }
+  }
+  async function openMembershipPortal() {
+    const button = $('#membership-manage');
+    button.disabled = true;
+    button.textContent = 'Opening membership settings…';
+    try {
+      const result = await api('/api/billing/portal', { method: 'POST', body: JSON.stringify({}) });
+      if (!result.portal_url || !result.portal_url.startsWith('https://billing.stripe.com/')) throw new Error('The secure membership settings page could not be verified.');
+      window.location.assign(result.portal_url);
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'Manage or cancel membership';
+      $('#membership-status').textContent = error.message;
+    }
+  }
   function formPayload(form) {
     const data = new FormData(form);
     const answers = {};
@@ -450,14 +965,20 @@
   function enterAfterGoogle(profile) {
     const studentId = studentIdFor(profile.sub);
     state.profileId = studentId;
+    const trialKey = `learner-started:${studentId}`;
+    if (!localStorage.getItem(trialKey)) localStorage.setItem(trialKey, String(Date.now()));
     $('#calendar-student-id').value = studentId;
     const surveyId = $('#survey-form [name="student_id"]');
     if (surveyId) surveyId.value = studentId;
     const lookupId = $('#student-lookup [name="student_id"]');
     if (lookupId) lookupId.value = studentId;
+    renderProfile(profile);
     loadGameData(); renderGames(); updateArcadeScore(); renderCalendar(); renderCoursePath(); renderDailyAi(); renderReadingShelf();
     document.body.classList.remove('signed-out');
     setView('play');
+    renderMembership();
+    refreshMembership();
+    restoreOnlineRoom();
     const saved = localStorage.getItem(`student-arcade-difficulty:${state.profileId}`);
     if (saved && difficultyCopy[saved]) {
       state.gameLevel = saved;
@@ -478,7 +999,33 @@
   async function startSignIn() {
     const config = await fetch('/api/config', { cache: 'no-store' }).then(response => response.json()).catch(() => ({}));
     googleClientId = config.google_client_id || '';
+    const supabaseReady = Boolean(config.supabase_url && config.supabase_anon_key && window.supabase?.createClient);
+    if (supabaseReady) {
+      try {
+        supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+        $('#email-auth-status').textContent = 'Sign in with your email or make an account to get started.';
+        supabaseClient.auth.onAuthStateChange(event => {
+          if (event === 'PASSWORD_RECOVERY') $('#password-update-dialog').showModal();
+        });
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.access_token) {
+          const result = await api('/api/auth/supabase', { method: 'POST', body: JSON.stringify({ access_token: session.access_token }) });
+          sessionStorage.setItem('student-google-token', session.access_token);
+          enterAfterGoogle(result.profile);
+          return;
+        }
+      } catch (error) {
+        sessionStorage.removeItem('student-google-token');
+        $('#email-auth-status').textContent = error.message || 'Could not restore your account. Please sign in again.';
+      }
+    }
+    privatePreviewAvailable = config.allow_private_preview === true;
+    $('#private-preview-signin').hidden = !privatePreviewAvailable;
     const previousToken = sessionStorage.getItem('student-google-token');
+    if (privatePreviewAvailable && previousToken === 'local-private-preview') {
+      enterAfterGoogle({ sub: 'local-private-preview', email: 'private-preview@localhost', name: 'Private Preview Learner' });
+      return;
+    }
     if (previousToken) {
       try {
         const result = await api('/api/auth/google', { method: 'POST', body: JSON.stringify({ credential: previousToken }) });
@@ -498,7 +1045,108 @@
     };
     renderButton();
   }
-;
+  $('#email-login-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const email = $('#login-email').value.trim();
+    const password = $('#login-password').value;
+    const status = $('#email-auth-status');
+    if (!supabaseClient) { status.textContent = 'Email sign-in is not configured on this deployment. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.'; return; }
+    status.textContent = authMode === 'signup' ? 'Creating your account…' : 'Signing in…';
+    const task = authMode === 'signup'
+      ? supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
+      : supabaseClient.auth.signInWithPassword({ email, password });
+    task.then(async ({ data, error }) => {
+      if (error) throw error;
+      if (authMode === 'signup' && !data.session) { status.textContent = 'Check your email for a confirmation link, then come back here to sign in.'; return; }
+      const session = data.session;
+      if (!session?.access_token) throw new Error('Sign-in did not return a session. Confirm your email, then try again.');
+      const verified = await api('/api/auth/supabase', { method: 'POST', body: JSON.stringify({ access_token: session.access_token }) });
+      sessionStorage.setItem('student-google-token', session.access_token);
+      enterAfterGoogle(verified.profile);
+    }).catch(error => { status.textContent = error.message || 'Could not sign in. Check your email and password and try again.'; });
+  });
+  $('#make-account-button').addEventListener('click', () => {
+    authMode = authMode === 'signup' ? 'signin' : 'signup';
+    $('#welcome-auth-title').textContent = authMode === 'signup' ? 'Create your account' : 'Welcome back!';
+    $('#email-login-form button[type="submit"]').textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+    $('#make-account-button').textContent = authMode === 'signup' ? 'Sign in instead' : 'Make an account';
+    $('#login-password').autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
+    $('#email-auth-status').textContent = authMode === 'signup' ? 'Use an email you can open to confirm your account.' : 'Enter your email and password to continue.';
+    $('#login-email').focus();
+  });
+  $('#forgot-password-link').addEventListener('click', event => {
+    event.preventDefault();
+    if (!supabaseClient) { $('#email-auth-status').textContent = 'Password reset is not configured on this deployment yet.'; return; }
+    const email = $('#login-email').value.trim();
+    if (!email) { $('#email-auth-status').textContent = 'Enter your email first, then choose “Forgot it?” again.'; $('#login-email').focus(); return; }
+    $('#email-auth-status').textContent = 'Sending a reset link…';
+    supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }).then(({ error }) => {
+      $('#email-auth-status').textContent = error ? error.message : 'If an account uses that email, a password reset link will arrive shortly.';
+    });
+  });
+  $('#password-update-cancel').addEventListener('click', () => { $('#password-update-dialog').close(); supabaseClient?.auth.signOut(); });
+  $('#password-update-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = $('#password-update-status'); status.textContent = 'Updating your password…';
+    const { data, error } = await supabaseClient.auth.updateUser({ password: $('#new-account-password').value });
+    if (error) { status.textContent = error.message; return; }
+    $('#password-update-dialog').close();
+    $('#new-account-password').value = '';
+    if (data.user) {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session?.access_token) {
+        try { const verified = await api('/api/auth/supabase', { method: 'POST', body: JSON.stringify({ access_token: session.access_token }) }); sessionStorage.setItem('student-google-token', session.access_token); enterAfterGoogle(verified.profile); return; }
+        catch (authError) { $('#email-auth-status').textContent = authError.message; }
+      }
+    }
+    $('#email-auth-status').textContent = 'Your password was updated. You can sign in now.';
+  });
+  $('#private-preview-signin').addEventListener('click', () => {
+    if (!privatePreviewAvailable) return;
+    sessionStorage.setItem('student-google-token', 'local-private-preview');
+    enterAfterGoogle({ sub: 'local-private-preview', email: 'private-preview@localhost', name: 'Private Preview Learner' });
+  });
+  $('#home-link').addEventListener('click', event => {
+    event.preventDefault();
+    setView(document.body.classList.contains('signed-out') ? 'welcome' : 'play');
+  });
+  $('#profile-button').addEventListener('click', () => {
+    $('#profile-save-message').textContent = '';
+    $('#profile-dialog').showModal();
+    $('#profile-initials').focus();
+  });
+  $('#profile-close').addEventListener('click', () => $('#profile-dialog').close());
+  $('#profile-initials').addEventListener('input', event => {
+    const value = event.currentTarget.value.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 2);
+    event.currentTarget.value = value;
+    $('#profile-preview').textContent = value || 'LC';
+  });
+  $$('[data-avatar-color]').forEach(button => button.addEventListener('click', () => renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), button.dataset.avatarColor)));
+  $('#profile-save').addEventListener('click', () => {
+    const initials = $('#profile-initials').value.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 2) || initialsFor(state.account?.name);
+    localStorage.setItem(`learncode-avatar:${state.profileId}`, JSON.stringify({ initials, color: state.avatarColor }));
+    renderAvatar(initials, state.avatarColor);
+    $('#profile-save-message').textContent = 'Your icon is saved on this device.';
+  });
+  $('#profile-signout').addEventListener('click', () => {
+    if (onlineParty) closeOnlineRoom();
+    if (supabaseClient) supabaseClient.auth.signOut();
+    sessionStorage.removeItem('student-google-token');
+    if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect();
+    $('#profile-dialog').close();
+    $('#profile-button').hidden = true;
+    $('#cobit-panel').hidden = true;
+    $('#cobit-toggle').setAttribute('aria-expanded', 'false');
+    state.account = null;
+    document.body.classList.add('signed-out');
+    setView('welcome');
+    $('#email-auth-status').textContent = 'You’re signed out. Sign in with your email to continue.';
+  });
+  $('#cobit-toggle').addEventListener('click', () => $('#cobit-panel').hidden ? openCobit() : closeCobit());
+  $('#cobit-close').addEventListener('click', closeCobit);
+  $('#membership-cta').addEventListener('click', startMembershipCheckout);
+  $('#membership-manage').addEventListener('click', openMembershipPortal);
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#cobit-panel').hidden) closeCobit(); });
   function showError(target, message) { target.innerHTML = `<div class="error-state">${escapeHtml(message)}</div>`; }
   function csvCell(value) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
   function exportCsv(rows) {
@@ -606,6 +1254,49 @@
     } catch (error) { showError(target, error.message); }
   }
 
+  const studyTasksKey = 'learncoding-study-tasks-v1';
+  let studyTimer = null;
+  function readStudyTasks() {
+    try { const tasks = JSON.parse(localStorage.getItem(studyTasksKey) || '[]'); return Array.isArray(tasks) ? tasks : []; }
+    catch { return []; }
+  }
+  function renderStudyTasks() {
+    const tasks = readStudyTasks().sort((a, b) => Number(a.done) - Number(b.done) || a.due.localeCompare(b.due));
+    $('#study-task-count').textContent = `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`;
+    $('#study-task-list').innerHTML = tasks.length ? tasks.map(task => {
+      const dueDate = new Date(`${task.due}T12:00:00`);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const late = !task.done && dueDate < today;
+      const dueLabel = dueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return `<article class="study-task${task.done ? ' is-done' : ''}${late ? ' is-late' : ''}"><label class="study-task-check"><input type="checkbox" data-study-done="${escapeHtml(task.id)}" ${task.done ? 'checked' : ''}><span class="sr-only">Mark ${escapeHtml(task.title)} complete</span></label><div class="study-task-copy"><span class="study-task-subject">${escapeHtml(task.subject)}</span><strong>${escapeHtml(task.title)}</strong><span class="study-task-due">${late ? 'Overdue · ' : 'Due '}${dueLabel}</span></div><button type="button" class="study-task-delete" data-study-delete="${escapeHtml(task.id)}" aria-label="Delete ${escapeHtml(task.title)}">×</button></article>`;
+    }).join('') : '<p class="study-empty">Your list is clear. Add one assignment when you’re ready.</p>';
+  }
+  $('#study-task-due').min = new Date().toLocaleDateString('en-CA');
+  $('#study-task-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const tasks = readStudyTasks();
+    tasks.push({ id: crypto.randomUUID(), subject: $('#study-subject').value, title: $('#study-task-title').value.trim(), due: $('#study-task-due').value, done: false });
+    localStorage.setItem(studyTasksKey, JSON.stringify(tasks));
+    event.currentTarget.reset(); $('#study-task-due').min = new Date().toLocaleDateString('en-CA');
+    renderStudyTasks(); $('#study-task-title').focus();
+  });
+  $('#study-task-list').addEventListener('change', event => {
+    const id = event.target.dataset.studyDone; if (!id) return;
+    localStorage.setItem(studyTasksKey, JSON.stringify(readStudyTasks().map(task => task.id === id ? { ...task, done: event.target.checked } : task)));
+    renderStudyTasks();
+  });
+  $('#study-task-list').addEventListener('click', event => {
+    const id = event.target.closest('[data-study-delete]')?.dataset.studyDelete; if (!id) return;
+    localStorage.setItem(studyTasksKey, JSON.stringify(readStudyTasks().filter(task => task.id !== id))); renderStudyTasks();
+  });
+  $$('[data-focus-minutes]').forEach(button => button.addEventListener('click', () => {
+    clearInterval(studyTimer);
+    let seconds = Number(button.dataset.focusMinutes) * 60;
+    const status = $('#study-focus-status');
+    const update = () => { const min = Math.floor(seconds / 60); const sec = String(seconds % 60).padStart(2, '0'); status.textContent = seconds ? `Focus time · ${min}:${sec} remaining` : 'Focus block complete. Take a short break!'; if (!seconds) clearInterval(studyTimer); seconds -= 1; };
+    update(); studyTimer = setInterval(update, 1000);
+  }));
+  renderStudyTasks();
   $$('.nav-link').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
   $('[data-focus-color]').addEventListener('click', () => { setView('play'); $('#color-game').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
   $$('[data-go-survey]').forEach(button => button.addEventListener('click', () => setView('survey')));
@@ -617,6 +1308,35 @@
     localStorage.setItem(`student-arcade-difficulty:${state.profileId}`, state.gameLevel);
     renderGames(); updateArcadeScore();
   }));
+  $$('[data-party-mode]').forEach(button => button.addEventListener('click', () => {
+    partyMode = button.dataset.partyMode;
+    $$('[data-party-mode]').forEach(option => option.classList.toggle('selected', option === button));
+    $('#party-player-settings').hidden = partyMode !== 'party';
+    $('#party-online-settings').hidden = partyMode !== 'online';
+    $('#party-start-row').hidden = partyMode === 'online';
+    if (partyMode === 'party') renderPartyNames();
+  }));
+  $('#party-player-count').addEventListener('change', renderPartyNames);
+  $('#party-start').addEventListener('click', startParty);
+  $('#party-room-create').addEventListener('click', createOnlineRoom);
+  $('#party-room-join').addEventListener('click', joinOnlineRoom);
+  $('#party-room-code').addEventListener('input', event => { event.currentTarget.value = event.currentTarget.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); });
+  $('#party-room-code').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); joinOnlineRoom(); } });
+  $('#party-online-leave').addEventListener('click', () => closeOnlineRoom());
+  $('#online-game-start').addEventListener('click', startOnlineGame);
+  $('#online-chat-form').addEventListener('submit', sendOnlineMessage);
+  $('#party-question-options').addEventListener('click', event => {
+    const answer = event.target.closest('[data-party-answer]');
+    if (answer) answerParty(Number(answer.dataset.partyAnswer));
+  });
+  $('#party-roll').addEventListener('click', rollPartyDie);
+  $('#party-next').addEventListener('click', () => {
+    if (!partySession) return;
+    partySession.turn += 1;
+    renderPartyTurn();
+  });
+  $('#party-again').addEventListener('click', startParty);
+  $('#party-exit').addEventListener('click', leaveParty);
   $$('[data-first-difficulty]').forEach(button => button.addEventListener('click', () => {
     state.gameLevel = button.dataset.firstDifficulty;
     localStorage.setItem(`student-arcade-difficulty:${state.profileId}`, state.gameLevel);
@@ -628,6 +1348,8 @@
   }));
   $('#calendar-student-id').addEventListener('change', event => setGameProfile(event.currentTarget.value));
   $('#course-grid').addEventListener('click', event => {
+    const upgrade = event.target.closest('[data-course-premium]');
+    if (upgrade) { $('#membership-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#membership-cta').focus({ preventScroll: true }); return; }
     const button = event.target.closest('[data-course-open]');
     if (button && !button.disabled) openCourseLesson(Number(button.dataset.courseOpen));
   });

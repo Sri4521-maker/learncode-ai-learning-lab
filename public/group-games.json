@@ -1,0 +1,32 @@
+{
+  "ai-detective": {
+    "title": "AI Detective",
+    "questions": [
+      {"topic":"Check the claim","question":"An AI gives a confident fact. What should your team do?","options":["Check a reliable source","Trust the confident tone","Share it immediately","Ask it to repeat the claim"],"answer":0,"why":"A confident tone does not prove a fact is true."},
+      {"topic":"Prompt power","question":"Which prompt gives the clearest goal?","options":["Make something cool","Explain how rainbows form in 3 short steps for a beginner","Write more","Tell me everything"],"answer":1,"why":"A clear task, audience, and limit help an AI respond usefully."},
+      {"topic":"Private by design","question":"Which detail should stay out of a public chat?","options":["A favorite game","A made-up hero name","A home address","A favorite color"],"answer":2,"why":"Keep addresses and other personal details private."},
+      {"topic":"How AI works","question":"Why can an AI answer sound right and still be wrong?","options":["It can generate likely text without checking every fact","It only uses calculators","It reads minds","It is always offline"],"answer":0,"why":"Fluent writing and verified facts are different things."},
+      {"topic":"Human judgment","question":"What is a smart way to use AI for homework?","options":["Use it to learn, then check the answer and do your own work","Copy everything without reading","Share your password","Let it make every decision"],"answer":0,"why":"AI can support learning, but people should review and understand the work."}
+    ]
+  },
+  "color-rush": {
+    "title": "Color Rush",
+    "questions": [
+      {"topic":"CSS sprint","question":"Which CSS property changes text color?","options":["color","font-paint","text-fill-only","background-color"],"answer":0,"why":"The color property sets the foreground text color."},
+      {"topic":"Readable design","question":"What helps text stay readable on a bright yellow card?","options":["Dark text with strong contrast","Pale yellow text","Tiny letters","Color alone with no labels"],"answer":0,"why":"Strong foreground and background contrast makes text easier to read."},
+      {"topic":"CSS syntax","question":"Which rule makes a heading purple?","options":["h1 { color: purple; }","h1 = purple","purple: h1;","color h1 purple"],"answer":0,"why":"A CSS rule has a selector, braces, and a property-value pair."},
+      {"topic":"Spacing","question":"Which CSS property adds space inside a card’s border?","options":["padding","margin","outline","font-size"],"answer":0,"why":"Padding creates space between the content and its border."},
+      {"topic":"Inclusive colors","question":"How should a game show a correct answer?","options":["Use color and a clear label or icon","Use green only","Hide the answer text","Make the button blink"],"answer":0,"why":"More than one cue helps everyone understand the result."}
+    ]
+  },
+  "bug-bash": {
+    "title": "Bug Bash",
+    "questions": [
+      {"topic":"Debugging","question":"A button does nothing. What is the best first step?","options":["Reproduce the problem and check the error","Delete the project","Change random code","Blame the keyboard"],"answer":0,"why":"A repeatable problem and its error message provide useful clues."},
+      {"topic":"HTML","question":"What does HTML mainly describe?","options":["The structure and meaning of page content","The page’s internet speed","The screen brightness","Only the colors"],"answer":0,"why":"HTML marks up content such as headings, links, and paragraphs."},
+      {"topic":"JavaScript","question":"What does this JavaScript do?  const points = 4; points += 1;","options":["It changes points to 5","It deletes points","It changes the page color","It makes points text"],"answer":0,"why":"The += 1 operation adds one to the current value."},
+      {"topic":"Python","question":"What appears after print(2 + 3) runs in Python?","options":["5","2 + 3 stays hidden","An error every time","The word print"],"answer":0,"why":"Python evaluates the addition and print displays the result."},
+      {"topic":"Test your fix","question":"After fixing a bug, what should you do?","options":["Try the same steps again and check nearby behavior","Assume it is fixed","Delete the error message only","Publish without looking"],"answer":0,"why":"Retesting checks that the fix works and did not break nearby features."}
+    ]
+  }
+}

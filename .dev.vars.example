@@ -1,2 +1,6 @@
 ADMIN_SECRET=replace-with-a-long-random-secret
 GOOGLE_CLIENT_ID=your-google-oauth-web-client-id.apps.googleusercontent.com
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_replace-with-project-publishable-key
+STRIPE_SECRET_KEY=sk_test_replace-with-adult-managed-test-key
+STRIPE_PRICE_ID=price_replace-with-recurring-test-price-id
