@@ -113,3 +113,8 @@ main{width:min(1080px,calc(100% - 36px))}
 .cobit-status{min-height:0;margin:0;padding:0 12px 8px;background:var(--surface);color:var(--muted);font-size:10px;line-height:1.4}
 .cobit-status:empty{display:none}
 .cobit-form button:disabled{opacity:.6;cursor:wait}
+
+/* Clear first steps on the welcome screen */
+.welcome-auth .auth-intro{margin:-8px 0 3px;color:#716b79;font-size:12px;line-height:1.5}
+.google-signin-option[open] summary{margin-bottom:8px;color:#514574;font-weight:700}
+.dark .welcome-auth .auth-intro{color:#c5bdce}
