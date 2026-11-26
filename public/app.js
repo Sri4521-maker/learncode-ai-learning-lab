@@ -8,6 +8,8 @@
   let supabaseClient = null;
   let authMode = 'signin';
   let privatePreviewAvailable = false;
+  let veritasState = {};
+  let veritasBusy = false;
   const banks = {
     foundations: [
       { id: 'q1', question: 'What is a prompt?', options: ['A clear instruction or question given to an AI tool', 'A computer screen', 'A password', 'A type of battery'] },
@@ -853,17 +855,52 @@
     $('#profile-button').hidden = false;
   }
   function openCobit() {
-    const panel = $('#cobit-panel');
-    const frame = $('#cobit-frame');
-    panel.hidden = false;
+    $('#cobit-panel').hidden = false;
     $('#cobit-toggle').setAttribute('aria-expanded', 'true');
-    if (!frame.hasAttribute('src')) frame.src = frame.dataset.src;
-    $('#cobit-close').focus();
+    $('#cobit-input').focus();
   }
   function closeCobit() {
     $('#cobit-panel').hidden = true;
     $('#cobit-toggle').setAttribute('aria-expanded', 'false');
     $('#cobit-toggle').focus();
+  }
+  function appendVeritasMessage(message, sender) {
+    const item = document.createElement('p');
+    item.className = `veritas-message ${sender}-message`;
+    item.textContent = message;
+    $('#cobit-messages').append(item);
+    $('#cobit-messages').scrollTop = $('#cobit-messages').scrollHeight;
+  }
+  async function sendVeritasMessage(event) {
+    event.preventDefault();
+    const input = $('#cobit-input');
+    const message = input.value.trim();
+    if (!message || veritasBusy) return;
+    veritasBusy = true;
+    $('#cobit-send').disabled = true;
+    input.disabled = true;
+    $('#cobit-status').textContent = 'Veritas is thinking…';
+    appendVeritasMessage(message, 'user');
+    try {
+      const response = await fetch('/api/veritas/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, state: veritasState })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) throw new Error(result.message || 'The coach service could not answer right now.');
+      veritasState = result.state && typeof result.state === 'object' ? result.state : {};
+      appendVeritasMessage(String(result.reply || 'I don’t have a reply yet. Try asking another way.'), 'coach');
+      input.value = '';
+      $('#cobit-status').textContent = '';
+    } catch (error) {
+      $('#cobit-status').textContent = `${error.message || 'Could not reach Veritas.'} Your message is still here; try again when you’re ready.`;
+    } finally {
+      veritasBusy = false;
+      $('#cobit-send').disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
   }
   function renderMembership(message = '') {
     const card = $('#membership-card');
@@ -1144,6 +1181,10 @@
   });
   $('#cobit-toggle').addEventListener('click', () => $('#cobit-panel').hidden ? openCobit() : closeCobit());
   $('#cobit-close').addEventListener('click', closeCobit);
+  $('#cobit-form').addEventListener('submit', sendVeritasMessage);
+  $('#cobit-input').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); $('#cobit-form').requestSubmit(); }
+  });
   $('#membership-cta').addEventListener('click', startMembershipCheckout);
   $('#membership-manage').addEventListener('click', openMembershipPortal);
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#cobit-panel').hidden) closeCobit(); });

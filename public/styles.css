@@ -102,3 +102,14 @@ main{width:min(1080px,calc(100% - 36px))}
 @media(max-width:900px){.install-app-button{padding-inline:10px;font-size:11px}}
 @media(max-width:600px){.site-header .install-app-button{order:2;min-height:38px}.site-header #theme-toggle{order:3}.site-header .profile-button{order:4}}
 @media(prefers-reduced-motion:reduce){.install-app-button{transition:none}}
+.cobit-messages{display:flex;flex:1;min-height:0;flex-direction:column;gap:10px;overflow:auto;padding:14px;background:var(--bg);overscroll-behavior:contain}
+.veritas-message{max-width:91%;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.coach-message{align-self:flex-start;border-bottom-left-radius:4px;background:var(--surface);color:var(--text)}
+.user-message{align-self:flex-end;border-color:#ded5ff;border-bottom-right-radius:4px;background:#f1edff;color:#32264f}
+.cobit-form{display:flex;align-items:flex-end;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--surface)}
+.cobit-form textarea{flex:1;min-width:0;min-height:42px;max-height:100px;resize:vertical;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:12px/1.4 'DM Sans',sans-serif}
+.cobit-form textarea:focus-visible{outline:3px solid #694dc0;outline-offset:2px}
+.cobit-form .button{min-height:42px;padding:9px 12px}
+.cobit-status{min-height:0;margin:0;padding:0 12px 8px;background:var(--surface);color:var(--muted);font-size:10px;line-height:1.4}
+.cobit-status:empty{display:none}
+.cobit-form button:disabled{opacity:.6;cursor:wait}
