@@ -1392,3 +1392,65 @@
   updateCounters();
   updateProgress();
 })();
+
+// Installable app support. The service worker caches only the public app shell;
+// authentication, learner records, and multiplayer requests always stay online.
+(() => {
+  const installButton = document.getElementById('install-app-button');
+  const offlineStatus = document.getElementById('offline-status');
+  const installDialog = document.getElementById('install-help-dialog');
+  const installCopy = document.getElementById('install-help-copy');
+  if (!installButton) return;
+
+  let pendingInstall = null;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) installButton.hidden = true;
+
+  const updateConnection = () => {
+    if (offlineStatus) offlineStatus.hidden = navigator.onLine;
+  };
+  window.addEventListener('online', updateConnection);
+  window.addEventListener('offline', updateConnection);
+  updateConnection();
+
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    pendingInstall = event;
+    installButton.hidden = false;
+    installButton.textContent = 'Install app';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    pendingInstall = null;
+    installButton.hidden = true;
+  });
+
+  installButton.addEventListener('click', async () => {
+    if (pendingInstall) {
+      pendingInstall.prompt();
+      await pendingInstall.userChoice;
+      pendingInstall = null;
+      return;
+    }
+
+    const isAppleMobile = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (installCopy) installCopy.textContent = isAppleMobile
+      ? 'In Safari, tap Share, then choose “Add to Home Screen.” This puts LearnCoding beside your other apps.'
+      : 'Open your browser menu and choose “Install app” or “Add to Home screen.” In Chrome, look for the install icon in the address bar.';
+    if (installDialog?.showModal) installDialog.showModal();
+    else window.alert(installCopy?.textContent || 'Use your browser menu to install this app.');
+  });
+
+  document.getElementById('install-help-close')?.addEventListener('click', () => installDialog?.close());
+  installDialog?.addEventListener('click', event => {
+    if (event.target === installDialog) installDialog.close();
+  });
+
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(error => {
+        console.warn('LearnCoding offline app setup could not start:', error);
+      });
+    }, { once: true });
+  }
+})();

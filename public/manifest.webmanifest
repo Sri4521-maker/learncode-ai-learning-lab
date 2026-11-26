@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "LeArNCoDiNg — AI & Creative Coding",
+  "short_name": "LearnCoding",
+  "description": "A friendly daily learning app for AI, coding, creative projects, and school skills.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "theme_color": "#fff7e9",
+  "background_color": "#fff7e9",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
