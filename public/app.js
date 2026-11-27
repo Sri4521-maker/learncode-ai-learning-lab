@@ -1179,9 +1179,21 @@
     setView('welcome');
     $('#email-auth-status').textContent = 'You’re signed out. Sign in with your email to continue.';
   });
+  $('#start-daily-button').addEventListener('click', () => $('#daily-ai-title').scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  $('#start-game-button').addEventListener('click', () => $('#party-setup').scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  $('#start-veritas-button').addEventListener('click', () => {
+    openCobit();
+    $('#cobit-panel').scrollIntoView({ behavior: 'smooth', block: 'end' });
+  });
   $('#cobit-toggle').addEventListener('click', () => $('#cobit-panel').hidden ? openCobit() : closeCobit());
   $('#cobit-close').addEventListener('click', closeCobit);
   $('#cobit-form').addEventListener('submit', sendVeritasMessage);
+  $('#cobit-panel').addEventListener('click', event => {
+    const prompt = event.target.closest('[data-veritas-prompt]');
+    if (!prompt || veritasBusy) return;
+    $('#cobit-input').value = prompt.dataset.veritasPrompt;
+    $('#cobit-form').requestSubmit();
+  });
   $('#cobit-input').addEventListener('keydown', event => {
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); $('#cobit-form').requestSubmit(); }
   });
