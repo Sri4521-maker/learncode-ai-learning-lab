@@ -1,4 +1,4 @@
-const CACHE_NAME = 'learncoding-shell-v6';
+const CACHE_NAME = 'learncoding-shell-v7';
 const APP_SHELL = [
   '/',
   '/index.html',
