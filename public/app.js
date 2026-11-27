@@ -1281,6 +1281,7 @@
   $('#start-daily-button').addEventListener('click', () => $('#daily-ai-title').scrollIntoView({ behavior: 'smooth', block: 'center' }));
   $('#start-game-button').addEventListener('click', () => $('#party-setup').scrollIntoView({ behavior: 'smooth', block: 'center' }));
   $('#start-veritas-button').addEventListener('click', openVeritasEmbed);
+  $('#start-photo-button').addEventListener('click', () => { openCobit(); $('#veritas-photo-button').click(); });
   $('#veritas-embed-toggle').addEventListener('click', () => $('#veritas-embed').hidden ? openVeritasEmbed() : closeVeritasEmbed());
   $('#cobit-toggle').addEventListener('click', () => $('#cobit-panel').hidden ? openCobit() : closeCobit());
   $('#cobit-close').addEventListener('click', closeCobit);
