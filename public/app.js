@@ -1434,6 +1434,90 @@
   updateProgress();
 })();
 
+// Cross-subject Discovery Studio activities. All sample data is clearly marked as illustrative.
+(() => {
+  const conditionSelect = document.getElementById('plant-condition');
+  const chart = document.getElementById('plant-growth-chart');
+  const summary = document.getElementById('plant-growth-summary');
+  const quiz = document.getElementById('subjects-quiz');
+  if (!conditionSelect || !chart || !summary || !quiz) return;
+
+  const plantSamples = {
+    low: { label: 'lower-light sample', values: [1, 1.4, 1.8, 2.1, 2.5, 2.8, 3.1] },
+    steady: { label: 'steady-light sample', values: [1, 2.1, 3.2, 4.4, 5.7, 7.1, 8.4] },
+    bright: { label: 'brighter-light sample', values: [1, 2.4, 4.0, 5.8, 7.4, 9.1, 10.2] }
+  };
+
+  function renderPlantChart() {
+    const sample = plantSamples[conditionSelect.value] || plantSamples.steady;
+    const max = Math.max(...sample.values);
+    chart.setAttribute('aria-label', `Illustrative seven-day plant growth practice data for the ${sample.label}. Heights range from ${sample.values[0]} to ${max} centimeters.`);
+    chart.innerHTML = sample.values.map((value, index) => `
+      <div class="plant-chart-day" aria-hidden="true">
+        <div class="plant-bar-track"><span class="plant-bar" style="height:${Math.max(8, (value / max) * 100)}%"></span></div>
+        <span class="plant-chart-value">${value.toFixed(1)} cm</span>
+        <span class="plant-chart-label">Day ${index + 1}</span>
+      </div>`).join('');
+    summary.textContent = `In this practice dataset, the recorded height changes from ${sample.values[0].toFixed(1)} cm to ${max.toFixed(1)} cm over seven days. A pattern in sample data does not prove that light alone caused the change.`;
+  }
+  conditionSelect.addEventListener('change', renderPlantChart);
+  renderPlantChart();
+
+  const questions = [
+    { subject: 'Biology', question: 'Which organ pumps blood through the body?', choices: ['Lungs', 'Heart', 'Stomach'], answer: 1, why: 'The heart is a muscle that pumps blood. The lungs help exchange oxygen and carbon dioxide.' },
+    { subject: 'Math', question: 'Which decimal is equal to 3/4?', choices: ['0.34', '0.70', '0.75'], answer: 2, why: 'Three divided by four is 0.75. You can also think of 3/4 as 75 out of 100.' },
+    { subject: 'Physics', question: 'A toy car travels 12 meters in 3 seconds. What is its average speed?', choices: ['4 meters per second', '9 meters per second', '36 meters per second'], answer: 0, why: 'Average speed is distance divided by time: 12 ÷ 3 = 4 meters per second.' },
+    { subject: 'Earth science', question: 'What is the name for water vapor cooling into tiny liquid drops in clouds?', choices: ['Condensation', 'Evaporation', 'Erosion'], answer: 0, why: 'Condensation happens when water vapor cools and changes into liquid droplets.' },
+    { subject: 'History', question: 'Which item is usually a primary source about a past event?', choices: ['A diary written by someone who was there', 'A modern encyclopedia entry', 'A recent movie about the event'], answer: 0, why: 'A diary made by a person who experienced the event is a firsthand source. Historians still compare sources and check context.' },
+    { subject: 'English', question: 'In “The curious student built a robot,” which word is the verb?', choices: ['curious', 'student', 'built'], answer: 2, why: '“Built” tells what the student did, so it is the verb.' }
+  ];
+  let questionIndex = 0;
+  let score = 0;
+  let answered = false;
+
+  function renderQuiz() {
+    if (questionIndex >= questions.length) {
+      quiz.innerHTML = `<div class="subject-quiz-result"><p class="eyebrow">QUEST COMPLETE</p><h4>You scored ${score} of ${questions.length}</h4><p>You explored six different subjects. Keep asking how ideas connect.</p><button class="button primary" type="button" data-restart-subject-quiz>Try the quest again</button></div>`;
+      quiz.querySelector('[data-restart-subject-quiz]').addEventListener('click', () => {
+        questionIndex = 0;
+        score = 0;
+        answered = false;
+        renderQuiz();
+      });
+      return;
+    }
+    const item = questions[questionIndex];
+    quiz.innerHTML = `
+      <div class="subject-quiz-progress"><span>${item.subject}</span><span>Question ${questionIndex + 1} of ${questions.length}</span></div>
+      <h4 class="subject-quiz-question">${item.question}</h4>
+      <div class="subject-quiz-choices" role="group" aria-label="Answer choices">${item.choices.map((choice, index) => `<button class="subject-quiz-choice" type="button" data-subject-choice="${index}">${choice}</button>`).join('')}</div>
+      <p class="subject-quiz-feedback" role="status" aria-live="polite"></p>
+      <button class="button primary subject-quiz-next" type="button" hidden>${questionIndex === questions.length - 1 ? 'See my result' : 'Next subject'}</button>`;
+    const feedback = quiz.querySelector('.subject-quiz-feedback');
+    const next = quiz.querySelector('.subject-quiz-next');
+    quiz.querySelectorAll('[data-subject-choice]').forEach(button => button.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      const picked = Number(button.dataset.subjectChoice);
+      const correct = picked === item.answer;
+      if (correct) score += 1;
+      quiz.querySelectorAll('[data-subject-choice]').forEach((choiceButton, index) => {
+        choiceButton.disabled = true;
+        if (index === item.answer) choiceButton.classList.add('is-correct');
+        else if (index === picked) choiceButton.classList.add('is-incorrect');
+      });
+      feedback.className = `subject-quiz-feedback ${correct ? 'is-correct' : 'is-incorrect'}`;
+      feedback.textContent = `${correct ? 'That’s right. ' : 'Good try. '}${item.why}`;
+      next.hidden = false;
+    }));
+    next.addEventListener('click', () => {
+      questionIndex += 1;
+      answered = false;
+      renderQuiz();
+    });
+  }
+  renderQuiz();
+})();
 // Installable app support. The service worker caches only the public app shell;
 // authentication, learner records, and multiplayer requests always stay online.
 (() => {
