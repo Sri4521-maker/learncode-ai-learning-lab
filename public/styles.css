@@ -322,3 +322,11 @@ body.dark {
     radial-gradient(ellipse at 94% 18%, rgba(88, 66, 150, .16) 0, transparent 30rem),
     var(--bg);
 }
+
+/* Make the photo homework option visible and easy to scan in the quick-start area. */
+.start-here-actions{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.photo-start-card{border-color:#dcd4f5;background:linear-gradient(145deg,#f7f3ff,#fffaf1)}
+.photo-start-card .start-here-number{color:#6548d6}
+.photo-start-card:hover{border-color:#8569d5;box-shadow:0 9px 22px rgba(84,61,165,.14)}
+.photo-start-card:focus-visible{outline:3px solid #694dc0;outline-offset:3px}
+.dark .photo-start-card{background:linear-gradient(145deg,#26233a,#252229);border-color:#514574}
