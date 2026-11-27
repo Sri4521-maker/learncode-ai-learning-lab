@@ -1,4 +1,4 @@
-const CACHE_NAME = 'learncoding-shell-v2';
+const CACHE_NAME = 'learncoding-shell-v3';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   '/app.js',
   '/manifest.webmanifest',
   '/favicon.svg',
+  '/favicon.png',
   '/learncode-mark.svg',
   '/pwa-icon.svg'
 ];
