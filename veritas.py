@@ -165,6 +165,10 @@ def tokenize(text):
 def find_lesson(tokens):
     """Match tokens to a lesson, forgiving plurals and small typos."""
     alias_map = {a: key for key, data in LESSONS.items() for a in data["aliases"]}
+    phrase = " ".join(tokens)
+    for alias, key in alias_map.items():
+        if " " in alias and alias in phrase:
+            return key
     for token in tokens:
         for alias, key in alias_map.items():
             if token == alias or (len(alias) >= 4 and token.startswith(alias)):
