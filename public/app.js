@@ -876,7 +876,20 @@
     renderAvatar(saved.initials || defaultInitials, saved.color || '#6c4ccf', saved.icon || '');
     $('#profile-button').hidden = false;
   }
+  function openVeritasEmbed() {
+    $('#cobit-panel').hidden = true;
+    $('#cobit-toggle').setAttribute('aria-expanded', 'false');
+    $('#veritas-embed').hidden = false;
+    $('#veritas-embed-toggle').setAttribute('aria-expanded', 'true');
+  }
+  function closeVeritasEmbed() {
+    $('#veritas-embed').hidden = true;
+    $('#veritas-embed-toggle').setAttribute('aria-expanded', 'false');
+    $('#veritas-embed-toggle').focus();
+  }
   function openCobit() {
+    $('#veritas-embed').hidden = true;
+    $('#veritas-embed-toggle').setAttribute('aria-expanded', 'false');
     $('#cobit-panel').hidden = false;
     $('#cobit-toggle').setAttribute('aria-expanded', 'true');
     $('#cobit-input').focus();
@@ -1150,8 +1163,12 @@
     setView('welcome');
     if (!googleClientId) { $('#google-signin-fallback').hidden = false; $('#signin-message').textContent = 'Google sign-in needs this site’s Google OAuth client ID before accounts can connect.'; return; }
     $('#google-signin-fallback').hidden = true;
+    let googleWaits = 0;
     const renderButton = () => {
-      if (!window.google?.accounts?.id) { window.setTimeout(renderButton, 200); return; }
+      if (!window.google?.accounts?.id) {
+        if (googleWaits++ >= 40) { $('#signin-message').textContent = 'Google sign-in could not load. Check your connection, then refresh this page.'; $('#google-signin-fallback').hidden = false; return; }
+        window.setTimeout(renderButton, 200); return;
+      }
       window.google.accounts.id.initialize({ client_id: googleClientId, callback: response => acceptGoogleCredential(response.credential) });
       window.google.accounts.id.renderButton($('#google-signin-button'), { theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', width: 300 });
       $('#signin-message').textContent = 'Choose a Google account to continue.';
@@ -1163,7 +1180,7 @@
     const email = $('#login-email').value.trim();
     const password = $('#login-password').value;
     const status = $('#email-auth-status');
-    if (!supabaseClient) { status.textContent = 'Email sign-in is not configured on this deployment. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.'; return; }
+    if (!supabaseClient) { status.textContent = 'Email sign-in isn’t configured on this site yet. The site owner must add Supabase settings and redeploy.'; return; }
     status.textContent = authMode === 'signup' ? 'Creating your account…' : 'Signing in…';
     const task = authMode === 'signup'
       ? supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
@@ -1254,6 +1271,8 @@
     $('#profile-button').hidden = true;
     $('#cobit-panel').hidden = true;
     $('#cobit-toggle').setAttribute('aria-expanded', 'false');
+    $('#veritas-embed').hidden = true;
+    $('#veritas-embed-toggle').setAttribute('aria-expanded', 'false');
     state.account = null;
     document.body.classList.add('signed-out');
     setView('welcome');
@@ -1261,10 +1280,8 @@
   });
   $('#start-daily-button').addEventListener('click', () => $('#daily-ai-title').scrollIntoView({ behavior: 'smooth', block: 'center' }));
   $('#start-game-button').addEventListener('click', () => $('#party-setup').scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  $('#start-veritas-button').addEventListener('click', () => {
-    openCobit();
-    $('#cobit-panel').scrollIntoView({ behavior: 'smooth', block: 'end' });
-  });
+  $('#start-veritas-button').addEventListener('click', openVeritasEmbed);
+  $('#veritas-embed-toggle').addEventListener('click', () => $('#veritas-embed').hidden ? openVeritasEmbed() : closeVeritasEmbed());
   $('#cobit-toggle').addEventListener('click', () => $('#cobit-panel').hidden ? openCobit() : closeCobit());
   $('#cobit-close').addEventListener('click', closeCobit);
   $('#cobit-form').addEventListener('submit', sendVeritasMessage);
@@ -1281,7 +1298,11 @@
   });
   $('#membership-cta').addEventListener('click', startMembershipCheckout);
   $('#membership-manage').addEventListener('click', openMembershipPortal);
-  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#cobit-panel').hidden) closeCobit(); });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (!$('#cobit-panel').hidden) closeCobit();
+    else if (!$('#veritas-embed').hidden) closeVeritasEmbed();
+  });
   function showError(target, message) { target.innerHTML = `<div class="error-state">${escapeHtml(message)}</div>`; }
   function csvCell(value) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
   function exportCsv(rows) {
