@@ -309,3 +309,16 @@ button:active:not(:disabled) { transform: translateY(1px); }
 @media (prefers-reduced-motion: reduce) {
   .button, .nav-link, .theme-toggle, .mode-button, .daily-nav button, .calendar-arrows button { transition: none; }
 }
+
+
+/* LearnCode visual refinement v2: fill the learning hub hero and respect dark mode */
+#play-view .intro.game-intro {
+  width: 100%;
+  max-width: none;
+}
+body.dark {
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(94, 70, 145, .22) 0, transparent 34rem),
+    radial-gradient(ellipse at 94% 18%, rgba(88, 66, 150, .16) 0, transparent 30rem),
+    var(--bg);
+}
