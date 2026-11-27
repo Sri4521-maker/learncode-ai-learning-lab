@@ -867,7 +867,9 @@
   function appendVeritasMessage(message, sender) {
     const item = document.createElement('p');
     item.className = `veritas-message ${sender}-message`;
-    item.textContent = message;
+    item.textContent = sender === 'coach'
+      ? message.replace(/([.!?])\s+(?=[A-Z“])/g, '$1\n\n')
+      : message;
     $('#cobit-messages').append(item);
     $('#cobit-messages').scrollTop = $('#cobit-messages').scrollHeight;
   }
