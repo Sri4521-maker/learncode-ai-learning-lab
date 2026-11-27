@@ -107,9 +107,9 @@ def reply_to_veritas(message: str, incoming_state: Any = None) -> tuple[str, dic
     if any(word in tokens for word in ("bye", "quit", "exit")):
         return f"Keep coding, {state['user']}. You’re doing great!", state
     if "help" in tokens:
-        return "I can explain Python lessons, give you a 5-question quiz, offer a coding challenge with hints, share a joke or tip, and show your stats. Try 'lessons', 'quiz', or 'challenge'.", state
+        return "I can explain prepared lessons in coding, math, science, English, history, and AI literacy. I can also give a 5-question coding quiz, a practice challenge with hints, a joke, a tip, or your stats. Try a sample topic like 'fractions', 'photosynthesis', 'thesis', 'HTML', or type 'quiz'.", state
     if "lessons" in tokens or "topics" in tokens:
-        return "I can explain: " + ", ".join(veritas.LESSONS) + ". Just ask about one!", state
+        return "Prepared lessons: " + ", ".join(veritas.LESSONS) + ". Ask about a topic by name, such as 'How do fractions work?' or 'What is photosynthesis?'", state
     if "quiz" in tokens:
         state["mode"] = "quiz"
         state["quiz_questions"] = random.sample(range(len(veritas.QUIZ)), 5)
@@ -140,5 +140,5 @@ def reply_to_veritas(message: str, incoming_state: Any = None) -> tuple[str, dic
     if lesson:
         data = veritas.LESSONS[lesson]
         if lesson not in state["lessons_seen"]: state["lessons_seen"].append(lesson)
-        return f"{data['text']}\n\nPython example:\n{data['example']}\n\nTry changing a value and predict what happens first!", state
-    return "I don’t know that one yet. Try 'lessons', 'quiz', 'challenge', 'joke', or 'help'.", state
+        return f"{data['text']}\n\n{data.get('example_label', 'Python example')}:\n{data['example']}\n\nTry this: explain the idea in your own words, then change one detail or find one example.", state
+    return "I may not have a prepared lesson for that exact question yet. I can help with coding, math, science, English, history, and AI basics. Try 'lessons' to browse topics, or ask one focused question such as 'How do fractions work?'.", state
