@@ -926,12 +926,34 @@
       input.focus();
     }
   }
+  let tesseractLoading = null;
+  function loadTesseract() {
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (!tesseractLoading) {
+      tesseractLoading = (async () => {
+        for (const src of ['https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js', 'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js']) {
+          try {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              const timer = setTimeout(() => { script.remove(); reject(new Error('Photo reader timed out.')); }, 12000);
+              script.src = src;
+              script.onload = () => { clearTimeout(timer); resolve(); };
+              script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('Photo reader could not load.')); };
+              document.head.append(script);
+            });
+            if (window.Tesseract) return window.Tesseract;
+          } catch { /* Try the next supported CDN. */ }
+        }
+        throw new Error('Photo reading needs an internet connection. You can type the question instead.');
+      })().catch(error => { tesseractLoading = null; throw error; });
+    }
+    return tesseractLoading;
+  }
   async function readHomeworkPhoto(file) {
     const status = $('#veritas-photo-status');
     if (!file) return;
     if (!file.type.startsWith('image/')) { status.textContent = 'Choose an image file such as JPG or PNG.'; return; }
     if (file.size > 6 * 1024 * 1024) { status.textContent = 'Please choose a photo smaller than 6 MB.'; return; }
-    if (!window.Tesseract) { status.textContent = 'Photo reading is not ready. Refresh the page or type your question instead.'; return; }
     if (homeworkPhotoUrl) URL.revokeObjectURL(homeworkPhotoUrl);
     homeworkPhotoUrl = URL.createObjectURL(file);
     const preview = $('#veritas-photo-preview');
@@ -939,9 +961,11 @@
     preview.hidden = false;
     const button = $('#veritas-photo-button');
     button.disabled = true;
-    status.textContent = 'Reading clear printed text…';
+    status.textContent = 'Preparing the photo reader…';
     try {
-      const result = await window.Tesseract.recognize(file, 'eng');
+      const tesseract = await loadTesseract();
+      status.textContent = 'Reading clear printed text…';
+      const result = await tesseract.recognize(file, 'eng');
       const recognized = String(result.data.text || '').replace(/\s+/g, ' ').trim();
       if (!recognized) throw new Error('I could not read text in that photo. Try a brighter, closer picture or type the question.');
       $('#cobit-input').value = `Help me understand this homework: ${recognized}`.slice(0, 500);
