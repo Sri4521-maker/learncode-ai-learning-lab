@@ -3,13 +3,14 @@
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const state = { quiz: [], adminRows: [], chart: null, chartHistory: [], lastSubmission: null, gameLevel: 'foundations', calendarDate: new Date(), profileId: 'guest', gameData: {}, dailyOffset: 0, account: null, avatarColor: '#6c4ccf', isPremium: false, checkoutEnabled: false };
+  const state = { quiz: [], adminRows: [], chart: null, chartHistory: [], lastSubmission: null, gameLevel: 'foundations', calendarDate: new Date(), profileId: 'guest', gameData: {}, dailyOffset: 0, account: null, avatarColor: '#6c4ccf', avatarIcon: '', isPremium: false, checkoutEnabled: false };
   let googleClientId = '';
   let supabaseClient = null;
   let authMode = 'signin';
   let privatePreviewAvailable = false;
   let veritasState = {};
   let veritasBusy = false;
+  let homeworkPhotoUrl = '';
   const banks = {
     foundations: [
       { id: 'q1', question: 'What is a prompt?', options: ['A clear instruction or question given to an AI tool', 'A computer screen', 'A password', 'A type of battery'] },
@@ -317,6 +318,7 @@
   function updatePieceNumbers(sorter) { [...sorter.querySelectorAll('.tag-piece')].forEach((piece, index) => { piece.querySelector('.drag-label').textContent = String(index + 1); }); }
   function updateArcadeScore() {
     $('#arcade-xp').textContent = String(state.gameData.xp);
+    renderAvatarOptions();
     $('#arcade-coins').textContent = String(state.gameData.coins || 0);
     $('#arcade-badge-count').textContent = String(state.gameData.rewards?.length || 0);
     const clears = state.gameData.cleared.filter(key => key.startsWith(`${state.gameLevel}-`)).length;
@@ -827,14 +829,34 @@
   function initialsFor(name) {
     return String(name || 'LeArNCoDiNg').trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase().slice(0, 2) || 'LC';
   }
-  function renderAvatar(initials, color) {
+  const avatarOptions = [
+    { icon: '', xp: 0 }, { icon: '🐱', xp: 40 }, { icon: '🚀', xp: 100 },
+    { icon: '🦊', xp: 200 }, { icon: '🐉', xp: 350 }, { icon: '🌈', xp: 500 }
+  ];
+  function renderAvatarOptions() {
+    const xp = Number(state.gameData.xp || 0);
+    $('#avatar-xp-total').textContent = `${xp} XP earned`;
+    $('[data-avatar-icon]').forEach(button => {
+      const required = Number(button.dataset.avatarXp || 0);
+      const unlocked = xp >= required;
+      button.disabled = !unlocked;
+      button.classList.toggle('locked', !unlocked);
+      button.setAttribute('aria-pressed', String((button.dataset.avatarIcon || '') === state.avatarIcon));
+      const lock = button.querySelector('[data-avatar-lock]');
+      if (lock) lock.textContent = unlocked ? 'Unlocked' : `${required} XP to unlock`;
+    });
+  }
+  function renderAvatar(initials, color, icon = state.avatarIcon) {
     const safeInitials = String(initials || 'LC').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 2) || 'LC';
     const safeColor = /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#6c4ccf';
+    const safeIcon = avatarOptions.some(option => option.icon === icon && Number(state.gameData.xp || 0) >= option.xp) ? icon : '';
     state.avatarColor = safeColor;
+    state.avatarIcon = safeIcon;
     for (const avatar of [$('#profile-avatar'), $('#profile-preview')]) {
-      avatar.textContent = safeInitials;
+      avatar.textContent = safeIcon || safeInitials;
       avatar.style.setProperty('--avatar-color', safeColor);
     }
+    renderAvatarOptions();
     $('#profile-initials').value = safeInitials;
     $$('[data-avatar-color]').forEach(button => {
       const selected = button.dataset.avatarColor.toLowerCase() === safeColor.toLowerCase();
@@ -851,7 +873,7 @@
     const key = `learncode-avatar:${state.profileId}`;
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch { saved = {}; }
-    renderAvatar(saved.initials || defaultInitials, saved.color || '#6c4ccf');
+    renderAvatar(saved.initials || defaultInitials, saved.color || '#6c4ccf', saved.icon || '');
     $('#profile-button').hidden = false;
   }
   function openCobit() {
@@ -902,6 +924,33 @@
       $('#cobit-send').disabled = false;
       input.disabled = false;
       input.focus();
+    }
+  }
+  async function readHomeworkPhoto(file) {
+    const status = $('#veritas-photo-status');
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { status.textContent = 'Choose an image file such as JPG or PNG.'; return; }
+    if (file.size > 6 * 1024 * 1024) { status.textContent = 'Please choose a photo smaller than 6 MB.'; return; }
+    if (!window.Tesseract) { status.textContent = 'Photo reading is not ready. Refresh the page or type your question instead.'; return; }
+    if (homeworkPhotoUrl) URL.revokeObjectURL(homeworkPhotoUrl);
+    homeworkPhotoUrl = URL.createObjectURL(file);
+    const preview = $('#veritas-photo-preview');
+    preview.src = homeworkPhotoUrl;
+    preview.hidden = false;
+    const button = $('#veritas-photo-button');
+    button.disabled = true;
+    status.textContent = 'Reading clear printed text…';
+    try {
+      const result = await window.Tesseract.recognize(file, 'eng');
+      const recognized = String(result.data.text || '').replace(/\s+/g, ' ').trim();
+      if (!recognized) throw new Error('I could not read text in that photo. Try a brighter, closer picture or type the question.');
+      $('#cobit-input').value = `Help me understand this homework: ${recognized}`.slice(0, 500);
+      $('#cobit-input').focus();
+      status.textContent = 'Text added to your message. Check it for mistakes, then press Send. The photo stays on this device.';
+    } catch (error) {
+      status.textContent = error.message || 'I could not read that photo. Try another picture or type the question.';
+    } finally {
+      button.disabled = false;
     }
   }
   function renderMembership(message = '') {
@@ -1011,8 +1060,9 @@
     if (surveyId) surveyId.value = studentId;
     const lookupId = $('#student-lookup [name="student_id"]');
     if (lookupId) lookupId.value = studentId;
+    loadGameData();
     renderProfile(profile);
-    loadGameData(); renderGames(); updateArcadeScore(); renderCalendar(); renderCoursePath(); renderDailyAi(); renderReadingShelf();
+    renderGames(); updateArcadeScore(); renderCalendar(); renderCoursePath(); renderDailyAi(); renderReadingShelf();
     document.body.classList.remove('signed-out');
     setView('play');
     renderMembership();
@@ -1160,11 +1210,15 @@
     event.currentTarget.value = value;
     $('#profile-preview').textContent = value || 'LC';
   });
-  $$('[data-avatar-color]').forEach(button => button.addEventListener('click', () => renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), button.dataset.avatarColor)));
+  $('[data-avatar-color]').forEach(button => button.addEventListener('click', () => renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), button.dataset.avatarColor, state.avatarIcon)));
+  $('[data-avatar-icon]').forEach(button => button.addEventListener('click', () => {
+    if (button.disabled) return;
+    renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), state.avatarColor, button.dataset.avatarIcon || '');
+  }));
   $('#profile-save').addEventListener('click', () => {
     const initials = $('#profile-initials').value.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 2) || initialsFor(state.account?.name);
-    localStorage.setItem(`learncode-avatar:${state.profileId}`, JSON.stringify({ initials, color: state.avatarColor }));
-    renderAvatar(initials, state.avatarColor);
+    localStorage.setItem(`learncode-avatar:${state.profileId}`, JSON.stringify({ initials, color: state.avatarColor, icon: state.avatarIcon }));
+    renderAvatar(initials, state.avatarColor, state.avatarIcon);
     $('#profile-save-message').textContent = 'Your icon is saved on this device.';
   });
   $('#profile-signout').addEventListener('click', () => {
@@ -1190,6 +1244,8 @@
   $('#cobit-toggle').addEventListener('click', () => $('#cobit-panel').hidden ? openCobit() : closeCobit());
   $('#cobit-close').addEventListener('click', closeCobit);
   $('#cobit-form').addEventListener('submit', sendVeritasMessage);
+  $('#veritas-photo-button').addEventListener('click', () => $('#veritas-photo-input').click());
+  $('#veritas-photo-input').addEventListener('change', event => readHomeworkPhoto(event.currentTarget.files?.[0]));
   $('#cobit-panel').addEventListener('click', event => {
     const prompt = event.target.closest('[data-veritas-prompt]');
     if (!prompt || veritasBusy) return;
