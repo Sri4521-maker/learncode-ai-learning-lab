@@ -836,7 +836,7 @@
   function renderAvatarOptions() {
     const xp = Number(state.gameData.xp || 0);
     $('#avatar-xp-total').textContent = `${xp} XP earned`;
-    $('[data-avatar-icon]').forEach(button => {
+    $$('[data-avatar-icon]').forEach(button => {
       const required = Number(button.dataset.avatarXp || 0);
       const unlocked = xp >= required;
       button.disabled = !unlocked;
@@ -858,7 +858,7 @@
     }
     renderAvatarOptions();
     $('#profile-initials').value = safeInitials;
-    $$('[data-avatar-color]').forEach(button => {
+    $$$('[data-avatar-color]').forEach(button => {
       const selected = button.dataset.avatarColor.toLowerCase() === safeColor.toLowerCase();
       button.classList.toggle('selected', selected);
       button.setAttribute('aria-pressed', String(selected));
@@ -1251,8 +1251,8 @@
     event.currentTarget.value = value;
     $('#profile-preview').textContent = value || 'LC';
   });
-  $('[data-avatar-color]').forEach(button => button.addEventListener('click', () => renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), button.dataset.avatarColor, state.avatarIcon)));
-  $('[data-avatar-icon]').forEach(button => button.addEventListener('click', () => {
+  $$('[data-avatar-color]').forEach(button => button.addEventListener('click', () => renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), button.dataset.avatarColor, state.avatarIcon)));
+  $$('[data-avatar-icon]').forEach(button => button.addEventListener('click', () => {
     if (button.disabled) return;
     renderAvatar($('#profile-initials').value || initialsFor(state.account?.name), state.avatarColor, button.dataset.avatarIcon || '');
   }));
