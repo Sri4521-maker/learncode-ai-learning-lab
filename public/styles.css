@@ -330,3 +330,11 @@ body.dark {
 .photo-start-card:hover{border-color:#8569d5;box-shadow:0 9px 22px rgba(84,61,165,.14)}
 .photo-start-card:focus-visible{outline:3px solid #694dc0;outline-offset:3px}
 .dark .photo-start-card{background:linear-gradient(145deg,#26233a,#252229);border-color:#514574}
+
+/* Surface the homework-photo feature on the sign-in page too. */
+.welcome-photo-tip{display:flex;align-items:flex-start;gap:13px;margin:14px 0 20px;padding:16px 18px;border:1px solid #dcd4f5;border-radius:16px;background:linear-gradient(115deg,#f5f1ff,#fffaf1);color:#302b3b}
+.welcome-photo-tip>span{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:12px;background:#e6ddff;color:#5b43ce;font-size:22px}
+.welcome-photo-tip strong{font:750 14px/1.3 var(--display)}
+.welcome-photo-tip p{margin:5px 0 0;color:#716b79;font-size:11px;line-height:1.55}
+.dark .welcome-photo-tip{background:linear-gradient(115deg,#292536,#29252f);border-color:#504668;color:var(--text)}
+.dark .welcome-photo-tip p{color:var(--muted)}
