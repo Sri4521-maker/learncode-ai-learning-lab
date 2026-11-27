@@ -83,6 +83,51 @@
         <aside class="arcade-side"><section class="calendar-card"><div class="section-title-row"><div><p class="eyebrow">YOUR LEARNING CALENDAR</p><h2>Practice calendar</h2></div><div class="calendar-arrows"><button id="calendar-prev" type="button" aria-label="Previous month">‹</button><button id="calendar-next" type="button" aria-label="Next month">›</button></div></div><div id="calendar-month" class="calendar-month"></div><div id="practice-calendar" class="calendar-grid" role="grid"></div><p class="calendar-note"><span class="calendar-dot"></span> Practice day</p><label class="field calendar-id">Student ID<input id="calendar-student-id" placeholder="Enter your ID to see your days" autocomplete="off"></label><button id="calendar-save" class="button calendar-save" type="button">Save today as practice</button><p id="calendar-message" class="calendar-message" aria-live="polite"></p></section><section class="streak-card"><p class="eyebrow">YOUR BEST STREAK</p><strong id="streak-days">0 days</strong><p>Little steps add up. Check in on any day to keep building your streak.</p></section><section class="how-card"><p class="eyebrow">HOW TO PLAY</p><p>Clear a mission once to earn its points. Your reflection adds learning XP to your progress record.</p></section></aside>
       </div>
     </section>
+    <section class="discovery-studio" aria-labelledby="discovery-title">
+      <div class="discovery-heading">
+        <div><p class="eyebrow">BIOLOGY · MATH · PHYSICS · EARTH SCIENCE · HUMANITIES</p><h2 id="discovery-title">The Discovery Studio</h2><p class="muted">Use code to investigate real school subjects. These activities use practice examples, not medical advice or real experiment results.</p></div>
+        <span class="discovery-mark" aria-hidden="true">✦</span>
+      </div>
+      <div class="discovery-grid">
+        <article class="discovery-card discovery-biology" aria-labelledby="plant-lab-title">
+          <div class="discovery-card-kicker"><span>01 · BIOLOGY + DATA</span><span aria-hidden="true">🌱</span></div>
+          <h3 id="plant-lab-title">Plant growth data lab</h3>
+          <p>Change the sample light condition and compare a made-up classroom dataset across seven days. Then notice the trend.</p>
+          <label class="field" for="plant-condition">Choose a sample condition
+            <select id="plant-condition"><option value="low">Lower light · practice data</option><option value="steady" selected>Steady light · practice data</option><option value="bright">Brighter light · practice data</option></select>
+          </label>
+          <div id="plant-growth-chart" class="plant-growth-chart" role="img" aria-label="Sample plant growth chart"></div>
+          <p id="plant-growth-summary" class="discovery-feedback" role="status" aria-live="polite"></p>
+          <small class="discovery-note">Illustrative data for coding practice only. Real plant growth depends on many conditions; this is not a prediction.</small>
+        </article>
+        <article class="discovery-card discovery-quiz-card" aria-labelledby="subjects-quiz-title">
+          <div class="discovery-card-kicker"><span>02 · MIXED SUBJECTS</span><span aria-hidden="true">🧠</span></div>
+          <h3 id="subjects-quiz-title">Six-subject quick quest</h3>
+          <p>Try one short question each in biology, math, physics, Earth science, history, and English.</p>
+          <div id="subjects-quiz" class="subjects-quiz" aria-live="polite"></div>
+        </article>
+        <article class="discovery-card discovery-community" aria-labelledby="community-kit-title">
+          <div class="discovery-card-kicker"><span>03 · LEARN TOGETHER</span><span aria-hidden="true">🤝</span></div>
+          <h3 id="community-kit-title">A beginner-friendly community lesson</h3>
+          <p>Use a short activity to help a friend or a group explore coding. Ask a parent, guardian, teacher, librarian, or club leader before organizing a session.</p>
+          <ol class="community-steps">
+            <li><strong>5 min · Pick a question.</strong> For example: “What can a tiny dataset tell us about plant growth?”</li>
+            <li><strong>10 min · Try the lab.</strong> Change a setting, read the bars, and explain what the sample shows.</li>
+            <li><strong>5 min · Make a change.</strong> Ask learners to predict what will happen before changing a value.</li>
+            <li><strong>5 min · Reflect together.</strong> What was clear? What would make the activity easier to use?</li>
+          </ol>
+          <div class="community-access"><strong>Make it welcoming</strong><span>Offer written and spoken directions, read labels aloud, use more than color to show meaning, and let everyone work at their own pace.</span></div>
+          <p class="discovery-note">This is a starter plan, not a claim that a school, library, or club is partnered with LeArNCoDiNg.</p>
+        </article>
+        <article class="discovery-card discovery-reflection" aria-labelledby="service-reflection-title">
+          <div class="discovery-card-kicker"><span>04 · REFLECT WITH CARE</span><span aria-hidden="true">✍️</span></div>
+          <h3 id="service-reflection-title">Notice the learning impact</h3>
+          <p>If you share an activity, reflect honestly on what you did and what you learned from other people.</p>
+          <ul class="reflection-prompts"><li>Who was the activity designed to help?</li><li>What did learners find easy or confusing?</li><li>What did you change to make it more accessible?</li><li>What would you improve next time?</li></ul>
+          <p class="discovery-note">Describe only experiences that really happened. Never add names or private details about learners.</p>
+        </article>
+      </div>
+    </section>
     <section id="survey-view" class="view" aria-labelledby="survey-title">
       <div class="intro"><p class="eyebrow">LEARNING JOURNAL · ABOUT 8 MINUTES</p><h1 id="survey-title">Make your progress visible.</h1><p class="lead">A guided reflection for people building AI literacy and web development skills. Notice what you know, check your understanding, and choose what to explore next.</p></div>
       <form id="survey-form" novalidate>
