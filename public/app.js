@@ -858,7 +858,7 @@
     }
     renderAvatarOptions();
     $('#profile-initials').value = safeInitials;
-    $$$('[data-avatar-color]').forEach(button => {
+    $('[data-avatar-color]').forEach(button => {
       const selected = button.dataset.avatarColor.toLowerCase() === safeColor.toLowerCase();
       button.classList.toggle('selected', selected);
       button.setAttribute('aria-pressed', String(selected));
