@@ -106,7 +106,7 @@ def reply_to_veritas(message: str, incoming_state: Any = None) -> tuple[str, dic
         return "Say something and I’ll help! Try 'lessons', 'quiz', 'challenge', 'joke', or 'tip'.", state
     if any(word in tokens for word in ("bye", "quit", "exit")):
         return f"Keep coding, {state['user']}. You’re doing great!", state
-    if "help" in tokens:
+    if ("help" in tokens and len(tokens) <= 2) or lowered in {"what can you do", "commands"}:
         return "I can explain prepared lessons in coding, math, science, English, history, and AI literacy. I can also give a 5-question coding quiz, a practice challenge with hints, a joke, a tip, or your stats. Try a sample topic like 'fractions', 'photosynthesis', 'thesis', 'HTML', or type 'quiz'.", state
     if "lessons" in tokens or "topics" in tokens:
         return "Prepared lessons: " + ", ".join(veritas.LESSONS) + ". Ask about a topic by name, such as 'How do fractions work?' or 'What is photosynthesis?'", state
