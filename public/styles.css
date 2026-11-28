@@ -338,3 +338,12 @@ body.dark {
 .welcome-photo-tip p{margin:5px 0 0;color:#716b79;font-size:11px;line-height:1.55}
 .dark .welcome-photo-tip{background:linear-gradient(115deg,#292536,#29252f);border-color:#504668;color:var(--text)}
 .dark .welcome-photo-tip p{color:var(--muted)}
+
+/* Keep Google sign-in recovery steps close to the Google button. */
+.google-help{margin-top:10px;padding-top:10px;border-top:1px solid #eee7e1}
+.google-help summary{color:#635a6a;font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.google-help p{margin:8px 0 0;color:#716b79;font-size:11px;line-height:1.55}
+.google-help code{padding:2px 4px;border-radius:4px;background:#f1edf8;color:#514083;font-size:10px;overflow-wrap:anywhere}
+.dark .google-help{border-color:#494455}
+.dark .google-help summary,.dark .google-help p{color:#d1c8dc}
+.dark .google-help code{background:#211e2b;color:#d8cafd}
