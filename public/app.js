@@ -1008,10 +1008,10 @@
       button.disabled = false;
       $('#membership-note').textContent = 'Price and billing terms are shown by the payment provider before you confirm.';
     } else {
-      $('#membership-status').textContent = message || 'Your free daily lesson, article, and mini-games are ready. Plus lessons are locked until membership checkout is set up.';
-      button.textContent = 'Membership checkout is not ready yet';
+      $('#membership-status').textContent = message || 'Your free lessons, daily AI idea, articles, and mini-games are available now. Plus is not available to buy yet.';
+      button.textContent = 'Plus is not available yet';
       button.disabled = true;
-      $('#membership-note').textContent = 'The site owner must connect the payment account and plan before purchases can be made.';
+      $('#membership-note').textContent = 'No payment can be made right now. Ask a parent or guardian to review any future paid plan.';
     }
   }
   async function refreshMembership() {
